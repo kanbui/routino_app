@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'database/database_helper.dart';
 
 void main() {
   runApp(MyApp());
@@ -31,6 +32,12 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
   int _remainingTime = workDuration;
   bool _isWorking = true;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadPomodoro();
+  }
+
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -41,6 +48,7 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
           _isWorking = !_isWorking;
           _remainingTime = _isWorking ? workDuration : breakDuration;
         }
+        _savePomodoro();
       });
     });
   }
@@ -54,6 +62,27 @@ class _PomodoroTimerState extends State<PomodoroTimer> {
     setState(() {
       _isWorking = true;
       _remainingTime = workDuration;
+      _savePomodoro();
+    });
+  }
+
+  Future<void> _loadPomodoro() async {
+    final dbHelper = DatabaseHelper();
+    final pomodoro = await dbHelper.getPomodoro(1);
+    if (pomodoro != null) {
+      setState(() {
+        _isWorking = pomodoro['isWorking'] == 1;
+        _remainingTime = pomodoro['remainingTime'];
+      });
+    }
+  }
+
+  Future<void> _savePomodoro() async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.insertPomodoro({
+      'id': 1,
+      'isWorking': _isWorking ? 1 : 0,
+      'remainingTime': _remainingTime,
     });
   }
 
