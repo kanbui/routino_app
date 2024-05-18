@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../database/database_helper.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-const int pomodoroTime = 5; // 25 * 60; // 25 minutes in seconds
-const int breakTime = 3; // 5 * 60; // 5 minutes in seconds
+const int pomodoroTime = 5; // 5 seconds for testing
+const int breakTime = 3; // 3 seconds for testing
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -20,12 +21,45 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   int _remainingTime = pomodoroTime;
   bool _isWorking = true;
   Timer? _timer;
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
   @override
   void initState() {
     super.initState();
     _loadTask();
     _resetPomodoro(); // Reset Pomodoro time when entering the screen
+    _initializeNotifications(); // Initialize notifications
+  }
+
+  Future<void> _initializeNotifications() async {
+    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings();
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsDarwin,
+            macOS: initializationSettingsDarwin);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> _showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails('your_channel_id', 'your_channel_name',
+            channelDescription: 'your_channel_description',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: false);
+    const DarwinNotificationDetails darwinPlatformChannelSpecifics =
+        DarwinNotificationDetails();
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: darwinPlatformChannelSpecifics,
+        macOS: darwinPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
   }
 
   Future<void> _loadTask() async {
@@ -43,6 +77,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           _remainingTime--;
         } else {
           _stopTimer(); // Stop timer after a Pomodoro or break is complete
+          _showNotification(
+              _isWorking ? 'Pomodoro Complete' : 'Break Complete',
+              _isWorking
+                  ? 'Time to take a break!'
+                  : 'Time to get back to work!');
           _toggleWorkBreak(); // Switch between work and break
         }
         if (_isWorking) {
@@ -143,11 +182,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                   SizedBox(height: 20),
                   Container(
-                    width: 250,
-                    height: 250,
+                    width: 300,
+                    height: 300,
                     decoration: BoxDecoration(
-                      color:
-                          _isWorking ? Colors.red[400] : Colors.lightBlueAccent,
+                      color: _isWorking ? Colors.red : Colors.lightBlueAccent,
                       shape: BoxShape.circle,
                     ),
                     child: Center(

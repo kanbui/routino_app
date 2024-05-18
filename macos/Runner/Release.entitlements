@@ -4,5 +4,54 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+  <key>com.apple.security.notifications</key>
+  <true/>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <key>com.apple.security.network.server</key>
+  <true/>
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  <key>com.apple.security.device.camera</key>
+  <true/>
+  <key>com.apple.security.print</key>
+  <true/>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <key>com.apple.security.network.server</key>
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  <key>com.apple.security.device.camera</key>
+  <true/>
+  <key>com.apple.security.print</key>
+  <true/>
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <key>com.apple.security.personal-information.addressbook</key>
+  <true/>
+  <key>com.apple.security.personal-information.location</key>
+  <true/>
+  <key>com.apple.security.personal-information.calendars</key>
+  <true/>
+  <key>com.apple.security.personal-information.contacts</key>
+  <true/>
+  <key>com.apple.security.personal-information.documents</key>
+  <true/>
+  <key>com.apple.security.personal-information.incoming-data</key>
+  <true/>
+  <key>com.apple.security.personal-information.outgoing-data</key>
+  <true/>
 </dict>
 </plist>
