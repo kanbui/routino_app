@@ -15,23 +15,27 @@ class DatabaseHelper {
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, 'pomodoro.db');
-
-    // In đường dẫn tệp cơ sở dữ liệu
-    print("Database path: $path");
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'pomodoro.db');
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, 'pomodoro.db');
+
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Update the version to trigger onUpgrade
       onCreate: (db, version) {
-        return db.execute(
-          "CREATE TABLE pomodoro(id INTEGER PRIMARY KEY, isWorking INTEGER, remainingTime INTEGER)",
-        );
+        db.execute(
+            "CREATE TABLE pomodoro(id INTEGER PRIMARY KEY, isWorking INTEGER, remainingTime INTEGER)");
+        db.execute(
+            "CREATE TABLE tasks(id INTEGER PRIMARY KEY, name TEXT, totalWorkTime INTEGER, status TEXT)");
+      },
+      onUpgrade: (db, oldVersion, newVersion) {
+        if (oldVersion < 2) {
+          db.execute("ALTER TABLE tasks ADD COLUMN status TEXT");
+          db.execute("UPDATE tasks SET status = 'doing'");
+        }
       },
     );
   }
@@ -61,5 +65,37 @@ class DatabaseHelper {
   Future<void> deletePomodoro(int id) async {
     final db = await database;
     await db.delete('pomodoro', where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<void> insertTask(Map<String, dynamic> task) async {
+    final db = await database;
+    await db.insert('tasks', task,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<Map<String, dynamic>>> getTasks() async {
+    final db = await database;
+    return await db.query('tasks');
+  }
+
+  Future<List<Map<String, dynamic>>> getTasksByStatus(String status) async {
+    final db = await database;
+    return await db.query('tasks', where: "status = ?", whereArgs: [status]);
+  }
+
+  Future<void> updateTask(Map<String, dynamic> task) async {
+    final db = await database;
+    await db.update('tasks', task, where: "id = ?", whereArgs: [task['id']]);
+  }
+
+  Future<void> updateTaskStatus(int id, String status) async {
+    final db = await database;
+    await db.update('tasks', {'status': status},
+        where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<void> deleteTask(int id) async {
+    final db = await database;
+    await db.delete('tasks', where: "id = ?", whereArgs: [id]);
   }
 }
