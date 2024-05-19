@@ -18,8 +18,8 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, 'routino_app.db');
-    print('Database path: $path'); // In đường dẫn tới DB
+    String path = join(documentsDirectory.path, 'routino_app_v3.db');
+    print('Database path: $path'); // Print the database path
     return await openDatabase(
       path,
       version: 1,
@@ -32,6 +32,16 @@ class DatabaseHelper {
             status TEXT
           )
         ''');
+        await db.execute('''
+          CREATE TABLE subtasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parentTaskId INTEGER,
+            name TEXT,
+            totalWorkTime INTEGER DEFAULT 0,
+            status TEXT,
+            FOREIGN KEY (parentTaskId) REFERENCES tasks (id) ON DELETE CASCADE
+          )
+        ''');
       },
     );
   }
@@ -41,9 +51,20 @@ class DatabaseHelper {
     return await db.query('tasks');
   }
 
+  Future<List<Map<String, dynamic>>> getSubtasks(int parentTaskId) async {
+    Database db = await database;
+    return await db.query('subtasks',
+        where: 'parentTaskId = ?', whereArgs: [parentTaskId]);
+  }
+
   Future<void> insertTask(Map<String, dynamic> task) async {
     Database db = await database;
     await db.insert('tasks', task);
+  }
+
+  Future<void> insertSubtask(Map<String, dynamic> subtask) async {
+    Database db = await database;
+    await db.insert('subtasks', subtask);
   }
 
   Future<void> updateTask(Map<String, dynamic> task) async {
@@ -56,10 +77,29 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> updateSubtask(Map<String, dynamic> subtask) async {
+    Database db = await database;
+    await db.update(
+      'subtasks',
+      subtask,
+      where: 'id = ?',
+      whereArgs: [subtask['id']],
+    );
+  }
+
   Future<void> deleteTask(int id) async {
     Database db = await database;
     await db.delete(
       'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteSubtask(int id) async {
+    Database db = await database;
+    await db.delete(
+      'subtasks',
       where: 'id = ?',
       whereArgs: [id],
     );

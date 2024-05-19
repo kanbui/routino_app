@@ -20,6 +20,7 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   Map<String, dynamic> _task = {}; // Default to an empty map
+  List<Map<String, dynamic>> _subtasks = [];
   int _remainingTime = pomodoroTime;
   bool _isWorking = true;
   Timer? _timer;
@@ -29,6 +30,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   void initState() {
     super.initState();
     _loadTask();
+    _loadSubtasks();
     _resetPomodoro(); // Reset Pomodoro time when entering the screen
     _initializeNotifications(); // Initialize notifications
     _setupTray();
@@ -50,19 +52,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
 
   Future<void> _showNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails('your_channel_id', 'your_channel_name',
-            channelDescription: 'your_channel_description',
-            importance: Importance.max,
-            priority: Priority.high,
-            showWhen: false);
+        AndroidNotificationDetails(
+      'your_channel_id',
+      'your_channel_name',
+      channelDescription: 'your_channel_description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+      icon: '@mipmap/ic_launcher', // Default app icon
+    );
     const DarwinNotificationDetails darwinPlatformChannelSpecifics =
         DarwinNotificationDetails();
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-        iOS: darwinPlatformChannelSpecifics,
-        macOS: darwinPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin
-        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
+      android: androidPlatformChannelSpecifics,
+      iOS: darwinPlatformChannelSpecifics,
+      macOS: darwinPlatformChannelSpecifics,
+    );
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: 'item x',
+    );
   }
 
   Future<void> _loadTask() async {
@@ -73,6 +85,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
         orElse: () =>
             <String, dynamic>{}, // Return an empty map instead of null
       );
+    });
+  }
+
+  Future<void> _loadSubtasks() async {
+    final subtasks = await _dbHelper.getSubtasks(widget.taskId);
+    final sortedSubtasks = List<Map<String, dynamic>>.from(subtasks);
+    sortedSubtasks.sort((a, b) {
+      if (a['status'] == 'completed' && b['status'] != 'completed') {
+        return 1;
+      } else if (a['status'] != 'completed' && b['status'] == 'completed') {
+        return -1;
+      }
+      return 0;
+    });
+    setState(() {
+      _subtasks = sortedSubtasks;
     });
   }
 
@@ -166,6 +194,119 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     trayManager.setTitle(formattedTime);
   }
 
+  void _showAddSubtaskDialog() {
+    TextEditingController _subtaskNameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Subtask'),
+          content: TextField(
+            controller: _subtaskNameController,
+            decoration: InputDecoration(hintText: 'Subtask Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _dbHelper.insertSubtask({
+                  'parentTaskId': widget.taskId,
+                  'name': _subtaskNameController.text,
+                  'totalWorkTime': 0,
+                  'status': 'doing',
+                });
+                _loadSubtasks();
+                Navigator.pop(context);
+              },
+              child: Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditSubtaskDialog(Map<String, dynamic> subtask) {
+    TextEditingController _subtaskNameController =
+        TextEditingController(text: subtask['name']);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Edit Subtask'),
+          content: TextField(
+            controller: _subtaskNameController,
+            decoration: InputDecoration(hintText: 'Subtask Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                subtask['name'] = _subtaskNameController.text;
+                _dbHelper.updateSubtask(subtask);
+                _loadSubtasks();
+                Navigator.pop(context);
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteSubtask(int id) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Delete Subtask'),
+          content: Text('Are you sure you want to delete this subtask?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteSubtask(id);
+                Navigator.pop(context);
+              },
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _toggleSubtaskStatus(Map<String, dynamic> subtask) {
+    subtask['status'] = subtask['status'] == 'doing' ? 'completed' : 'doing';
+    _dbHelper.updateSubtask(subtask);
+    _loadSubtasks();
+  }
+
+  void _deleteSubtask(int id) {
+    _dbHelper.deleteSubtask(id);
+    _loadSubtasks();
+  }
+
+  void _startSubtaskTimer(Map<String, dynamic> subtask) {
+    // Implement timer logic for subtasks if needed
+  }
+
   @override
   void onTrayIconMouseDown() {
     trayManager.popUpContextMenu();
@@ -212,60 +353,111 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Center(
-              child: Column(
-                children: [
-                  Text(
-                    'Total Work Time: $totalWorkTimeFormatted',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      color: _isWorking ? Colors.red : Colors.lightBlueAccent,
-                      shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'Total Work Time: $totalWorkTimeFormatted',
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    child: Center(
-                      child: Text(
-                        formattedRemainingTime,
-                        style: TextStyle(
-                          fontSize: 48,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    SizedBox(height: 20),
+                    Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: _isWorking ? Colors.red : Colors.lightBlueAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          formattedRemainingTime,
+                          style: TextStyle(
+                            fontSize: 48,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _startTimer,
-                        child: Text('Start'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _stopTimer,
-                        child: Text('Stop'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _resetTimer,
-                        child: Text('Reset'),
-                      ),
-                    ],
-                  ),
-                ],
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _startTimer,
+                          child: Text('Start'),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _stopTimer,
+                          child: Text('Stop'),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _resetTimer,
+                          child: Text('Reset'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _showAddSubtaskDialog,
+                      child: Text('Add Subtask'),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Subtasks:',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    ..._subtasks.map((subtask) {
+                      final subtaskTotalWorkTimeFormatted =
+                          formatDuration(subtask['totalWorkTime']);
+                      return ListTile(
+                        title: Text(
+                          subtask['name'],
+                          style: TextStyle(
+                            decoration: subtask['status'] == 'completed'
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        leading: Checkbox(
+                          value: subtask['status'] == 'completed',
+                          onChanged: (value) {
+                            _toggleSubtaskStatus(subtask);
+                          },
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit),
+                              onPressed: () {
+                                _showEditSubtaskDialog(subtask);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                _confirmDeleteSubtask(subtask['id']);
+                              },
+                            ),
+                          ],
+                        ),
+                        subtitle:
+                            Text('Work Time: $subtaskTotalWorkTimeFormatted'),
+                      );
+                    }).toList(),
+                  ],
+                ),
               ),
-            ),
-            Expanded(child: Container()),
-          ],
+              SizedBox(height: 20), // Add extra spacing to avoid overflow
+            ],
+          ),
         ),
       ),
     );
