@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'screens/settings_screen.dart';
 import 'screens/task_list_screen.dart';
 
 void main() async {
@@ -23,11 +25,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pomodoro Timer',
+      title: 'Routino App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: TaskListScreen(),
+      routes: {
+        '/settings': (context) => SettingsScreen(),
+      },
     );
   }
 }

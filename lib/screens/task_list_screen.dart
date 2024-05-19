@@ -10,8 +10,7 @@ class TaskListScreen extends StatefulWidget {
 class _TaskListScreenState extends State<TaskListScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> _tasks = [];
-  bool _showCompletedTasks =
-      false; // State to manage completed tasks visibility
+  bool _showCompletedTasks = false; // State to manage completed tasks visibility
 
   @override
   void initState() {
@@ -27,8 +26,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _addTask(String name) async {
-    await _dbHelper
-        .insertTask({'name': name, 'totalWorkTime': 0, 'status': 'doing'});
+    await _dbHelper.insertTask({'name': name, 'totalWorkTime': 0, 'status': 'doing'});
     _loadTasks();
   }
 
@@ -80,8 +78,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   void _showEditTaskDialog(Map<String, dynamic> task) {
-    TextEditingController _taskNameController =
-        TextEditingController(text: task['name']);
+    TextEditingController _taskNameController = TextEditingController(text: task['name']);
     showDialog(
       context: context,
       builder: (context) {
@@ -169,14 +166,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> doingTasks =
-        _tasks.where((task) => task['status'] == 'doing').toList();
-    List<Map<String, dynamic>> completedTasks =
-        _tasks.where((task) => task['status'] == 'completed').toList();
+    List<Map<String, dynamic>> doingTasks = _tasks.where((task) => task['status'] == 'doing').toList();
+    List<Map<String, dynamic>> completedTasks = _tasks.where((task) => task['status'] == 'completed').toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Task List'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+          ),
+        ],
       ),
       body: ListView(
         children: [
@@ -186,8 +189,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
             itemCount: doingTasks.length,
             itemBuilder: (context, index) {
               final task = doingTasks[index];
-              final totalWorkTimeFormatted =
-                  formatDuration(task['totalWorkTime']);
+              final totalWorkTimeFormatted = formatDuration(task['totalWorkTime']);
               return Card(
                 color: Colors.lightBlueAccent, // Change color to light blue
                 shape: RoundedRectangleBorder(
@@ -204,8 +206,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           : TextDecoration.none,
                     ),
                   ),
-                  subtitle: Text(
-                      'Work Time: $totalWorkTimeFormatted'), // Display total work time
+                  subtitle: Text('Work Time: $totalWorkTimeFormatted'), // Display total work time
                   leading: Checkbox(
                     value: task['status'] == 'completed',
                     onChanged: (value) {
@@ -260,8 +261,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               itemCount: completedTasks.length,
               itemBuilder: (context, index) {
                 final task = completedTasks[index];
-                final totalWorkTimeFormatted =
-                    formatDuration(task['totalWorkTime']);
+                final totalWorkTimeFormatted = formatDuration(task['totalWorkTime']);
                 return Card(
                   color: Colors.grey, // Change color to grey
                   shape: RoundedRectangleBorder(
@@ -278,8 +278,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             : TextDecoration.none,
                       ),
                     ),
-                    subtitle: Text(
-                        'Work Time: $totalWorkTimeFormatted'), // Display total work time
+                    subtitle: Text('Work Time: $totalWorkTimeFormatted'), // Display total work time
                     leading: Checkbox(
                       value: task['status'] == 'completed',
                       onChanged: (value) {

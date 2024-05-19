@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
-
-const int pomodoroTime = 25 * 60; // 5 seconds for testing
-const int breakTime = 5 * 60; // 3 seconds for testing
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -22,20 +20,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   Map<String, dynamic> _task = {}; // Default to an empty map
   List<Map<String, dynamic>> _subtasks = [];
-  int _remainingTime = pomodoroTime;
+  int _remainingTime = 0;
   bool _isWorking = true;
   Timer? _timer;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  int _pomodoroDuration = 25; // Default value
+  int _breakDuration = 5; // Default value
 
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _loadTask();
     _loadSubtasks();
-    _resetPomodoro(); // Reset Pomodoro time when entering the screen
     _initializeNotifications(); // Initialize notifications
     _setupTray();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _pomodoroDuration = prefs.getInt('pomodoroDuration') ?? 25;
+      _breakDuration = prefs.getInt('breakDuration') ?? 5;
+      _remainingTime = _pomodoroDuration * 60;
+    });
   }
 
   Future<void> _initializeNotifications() async {
@@ -114,12 +123,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
           _remainingTime--;
         } else {
           _stopTimer(); // Stop timer after a Pomodoro or break is complete
+          _playSound(); // Play sound when Pomodoro or break is complete
           _showNotification(
               _isWorking ? 'Pomodoro Complete' : 'Break Complete',
               _isWorking
-                  ? 'Done Pomodoro. Time to take a break!'
+                  ? 'Time to take a break!'
                   : 'Time to get back to work!');
-          _playSound(); // Play sound when Pomodoro or break is complete
           _toggleWorkBreak(); // Switch between work and break
         }
         if (_isWorking) {
@@ -143,14 +152,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
 
   void _resetPomodoro() {
     _isWorking = true;
-    _remainingTime = pomodoroTime;
+    _remainingTime = _pomodoroDuration * 60;
     _updateTray();
   }
 
   void _toggleWorkBreak() {
     setState(() {
       _isWorking = !_isWorking;
-      _remainingTime = _isWorking ? pomodoroTime : breakTime;
+      _remainingTime =
+          _isWorking ? _pomodoroDuration * 60 : _breakDuration * 60;
       _updateTray();
     });
   }
