@@ -18,8 +18,15 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, 'routino_app_v3.db');
+    // Determine the environment
+    bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
+    String folderName = isDevelopment ? 'development' : 'production';
+    String path = join(documentsDirectory.path, 'routino_app_db', folderName,
+        'routino_app.db');
+    // Create the necessary directories if they don't exist
+    await Directory(dirname(path)).create(recursive: true);
     print('Database path: $path'); // Print the database path
+
     return await openDatabase(
       path,
       version: 1,

@@ -161,6 +161,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
+  String formatDuration(int totalSeconds) {
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> doingTasks =
@@ -180,6 +186,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
             itemCount: doingTasks.length,
             itemBuilder: (context, index) {
               final task = doingTasks[index];
+              final totalWorkTimeFormatted =
+                  formatDuration(task['totalWorkTime']);
               return Card(
                 color: Colors.lightBlueAccent, // Change color to light blue
                 shape: RoundedRectangleBorder(
@@ -196,6 +204,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           : TextDecoration.none,
                     ),
                   ),
+                  subtitle: Text(
+                      'Work Time: $totalWorkTimeFormatted'), // Display total work time
                   leading: Checkbox(
                     value: task['status'] == 'completed',
                     onChanged: (value) {
@@ -250,6 +260,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
               itemCount: completedTasks.length,
               itemBuilder: (context, index) {
                 final task = completedTasks[index];
+                final totalWorkTimeFormatted =
+                    formatDuration(task['totalWorkTime']);
                 return Card(
                   color: Colors.grey, // Change color to grey
                   shape: RoundedRectangleBorder(
@@ -266,6 +278,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             : TextDecoration.none,
                       ),
                     ),
+                    subtitle: Text(
+                        'Work Time: $totalWorkTimeFormatted'), // Display total work time
                     leading: Checkbox(
                       value: task['status'] == 'completed',
                       onChanged: (value) {

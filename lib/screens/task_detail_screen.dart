@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-const int pomodoroTime = 5; // 5 seconds for testing
-const int breakTime = 3; // 3 seconds for testing
+const int pomodoroTime = 25 * 60; // 5 seconds for testing
+const int breakTime = 5 * 60; // 3 seconds for testing
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;

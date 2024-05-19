@@ -9,7 +9,7 @@ void main() async {
   WindowOptions windowOptions = WindowOptions(
     size: Size(800, 600),
     center: true,
-    title: 'Pomodoro Timer',
+    title: 'Routino App',
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
