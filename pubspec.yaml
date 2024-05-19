@@ -35,6 +35,7 @@ dependencies:
   window_manager: ^0.3.9
   audioplayers: ^6.0.0
   shared_preferences: ^2.0.6
+  intl: ^0.19.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

@@ -1,14 +1,18 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'dart:io';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
-  static Database? _database;
+
+  factory DatabaseHelper() {
+    return _instance;
+  }
 
   DatabaseHelper._internal();
+
+  static Database? _database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -18,39 +22,45 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
+
     // Determine the environment
     bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
+
     String folderName = isDevelopment ? 'development' : 'production';
     String path = join(documentsDirectory.path, 'routino_app_db', folderName,
         'routino_app.db');
+
     // Create the necessary directories if they don't exist
     await Directory(dirname(path)).create(recursive: true);
+
     print('Database path: $path'); // Print the database path
 
     return await openDatabase(
       path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            totalWorkTime INTEGER DEFAULT 0,
-            status TEXT
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE subtasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parentTaskId INTEGER,
-            name TEXT,
-            totalWorkTime INTEGER DEFAULT 0,
-            status TEXT,
-            FOREIGN KEY (parentTaskId) REFERENCES tasks (id) ON DELETE CASCADE
-          )
-        ''');
-      },
+      version: 2,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future _onCreate(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        totalWorkTime INTEGER NOT NULL,
+        estimateTime INTEGER,
+        dueTime TEXT,
+        status TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE tasks ADD COLUMN estimateTime INTEGER');
+      await db.execute('ALTER TABLE tasks ADD COLUMN dueTime TEXT');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTasks() async {
@@ -58,68 +68,41 @@ class DatabaseHelper {
     return await db.query('tasks');
   }
 
-  Future<List<Map<String, dynamic>>> getSubtasks(int parentTaskId) async {
+  Future<int> insertTask(Map<String, dynamic> task) async {
     Database db = await database;
-    return await db.query('subtasks',
-        where: 'parentTaskId = ?', whereArgs: [parentTaskId]);
+    return await db.insert('tasks', task);
   }
 
-  Future<void> insertTask(Map<String, dynamic> task) async {
+  Future<int> updateTask(Map<String, dynamic> task) async {
     Database db = await database;
-    await db.insert('tasks', task);
+    return await db
+        .update('tasks', task, where: 'id = ?', whereArgs: [task['id']]);
   }
 
-  Future<void> insertSubtask(Map<String, dynamic> subtask) async {
+  Future<int> deleteTask(int id) async {
     Database db = await database;
-    await db.insert('subtasks', subtask);
+    return await db.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<void> updateTask(Map<String, dynamic> task) async {
+  Future<List<Map<String, dynamic>>> getSubtasks(int parentId) async {
     Database db = await database;
-    await db.update(
-      'tasks',
-      task,
-      where: 'id = ?',
-      whereArgs: [task['id']],
-    );
+    return await db
+        .query('subtasks', where: 'parentTaskId = ?', whereArgs: [parentId]);
   }
 
-  Future<void> updateSubtask(Map<String, dynamic> subtask) async {
+  Future<int> insertSubtask(Map<String, dynamic> subtask) async {
     Database db = await database;
-    await db.update(
-      'subtasks',
-      subtask,
-      where: 'id = ?',
-      whereArgs: [subtask['id']],
-    );
+    return await db.insert('subtasks', subtask);
   }
 
-  Future<void> deleteTask(int id) async {
+  Future<int> updateSubtask(Map<String, dynamic> subtask) async {
     Database db = await database;
-    await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.update('subtasks', subtask,
+        where: 'id = ?', whereArgs: [subtask['id']]);
   }
 
-  Future<void> deleteSubtask(int id) async {
+  Future<int> deleteSubtask(int id) async {
     Database db = await database;
-    await db.delete(
-      'subtasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<List<Map<String, dynamic>>> getTasksByStatus(String status) async {
-    final db = await database;
-    return await db.query('tasks', where: "status = ?", whereArgs: [status]);
-  }
-
-  Future<void> updateTaskStatus(int id, String status) async {
-    final db = await database;
-    await db.update('tasks', {'status': status},
-        where: "id = ?", whereArgs: [id]);
+    return await db.delete('subtasks', where: 'id = ?', whereArgs: [id]);
   }
 }
