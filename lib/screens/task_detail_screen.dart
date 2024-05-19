@@ -252,8 +252,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
             ),
             TextButton(
               onPressed: () {
-                subtask['name'] = _subtaskNameController.text;
-                _dbHelper.updateSubtask(subtask);
+                final updatedSubtask = Map<String, dynamic>.from(subtask);
+                updatedSubtask['name'] = _subtaskNameController.text;
+                _dbHelper.updateSubtask(updatedSubtask);
                 _loadSubtasks();
                 Navigator.pop(context);
               },
@@ -293,8 +294,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   void _toggleSubtaskStatus(Map<String, dynamic> subtask) {
-    subtask['status'] = subtask['status'] == 'doing' ? 'completed' : 'doing';
-    _dbHelper.updateSubtask(subtask);
+    final updatedSubtask = Map<String, dynamic>.from(subtask);
+    updatedSubtask['status'] =
+        subtask['status'] == 'doing' ? 'completed' : 'doing';
+    _dbHelper.updateSubtask(updatedSubtask);
     _loadSubtasks();
   }
 
