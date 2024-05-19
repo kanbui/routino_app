@@ -200,10 +200,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
       context: context,
       builder: (context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // Square corners
+          ),
           title: Text('Add Subtask'),
-          content: TextField(
-            controller: _subtaskNameController,
-            decoration: InputDecoration(hintText: 'Subtask Name'),
+          content: Container(
+            width: double.maxFinite,
+            child: TextField(
+              controller: _subtaskNameController,
+              decoration: InputDecoration(hintText: 'Subtask Name'),
+            ),
           ),
           actions: [
             TextButton(
@@ -238,10 +244,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
       context: context,
       builder: (context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero, // Square corners
+          ),
           title: Text('Edit Subtask'),
-          content: TextField(
-            controller: _subtaskNameController,
-            decoration: InputDecoration(hintText: 'Subtask Name'),
+          content: Container(
+            width: double.maxFinite,
+            child: TextField(
+              controller: _subtaskNameController,
+              decoration: InputDecoration(hintText: 'Subtask Name'),
+            ),
           ),
           actions: [
             TextButton(
@@ -419,40 +431,52 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     ..._subtasks.map((subtask) {
                       final subtaskTotalWorkTimeFormatted =
                           formatDuration(subtask['totalWorkTime']);
-                      return ListTile(
-                        title: Text(
-                          subtask['name'],
-                          style: TextStyle(
-                            decoration: subtask['status'] == 'completed'
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
+                      return Card(
+                        color: subtask['status'] == 'doing'
+                            ? Colors.lightBlueAccent
+                            : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.zero, // Remove rounded corners
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            subtask['name'],
+                            style: TextStyle(
+                              decoration: subtask['status'] == 'completed'
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
                           ),
+                          leading: Checkbox(
+                            value: subtask['status'] == 'completed',
+                            onChanged: (value) {
+                              _toggleSubtaskStatus(subtask);
+                            },
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () {
+                                  _showEditSubtaskDialog(subtask);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () {
+                                  _confirmDeleteSubtask(subtask['id']);
+                                },
+                              ),
+                            ],
+                          ),
+                          subtitle:
+                              Text('Work Time: $subtaskTotalWorkTimeFormatted'),
                         ),
-                        leading: Checkbox(
-                          value: subtask['status'] == 'completed',
-                          onChanged: (value) {
-                            _toggleSubtaskStatus(subtask);
-                          },
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit),
-                              onPressed: () {
-                                _showEditSubtaskDialog(subtask);
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () {
-                                _confirmDeleteSubtask(subtask['id']);
-                              },
-                            ),
-                          ],
-                        ),
-                        subtitle:
-                            Text('Work Time: $subtaskTotalWorkTimeFormatted'),
                       );
                     }).toList(),
                   ],
