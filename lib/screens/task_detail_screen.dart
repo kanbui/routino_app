@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import '../database/database_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -25,6 +26,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   bool _isWorking = true;
   Timer? _timer;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -115,8 +117,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
           _showNotification(
               _isWorking ? 'Pomodoro Complete' : 'Break Complete',
               _isWorking
-                  ? 'Time to take a break!'
+                  ? 'Done Pomodoro. Time to take a break!'
                   : 'Time to get back to work!');
+          _playSound(); // Play sound when Pomodoro or break is complete
           _toggleWorkBreak(); // Switch between work and break
         }
         if (_isWorking) {
@@ -162,6 +165,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
       });
       _loadTask(); // Refresh the task details
     }
+  }
+
+  Future<void> _playSound() async {
+    await _audioPlayer.play(AssetSource('ting.mp3'));
   }
 
   String formatDuration(int totalSeconds) {
@@ -342,6 +349,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     _resetPomodoro(); // Reset Pomodoro time when exiting the screen
     super.dispose();
   }
