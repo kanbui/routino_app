@@ -35,12 +35,7 @@ class DatabaseHelper {
 
     print('Database path: $path'); // Print the database path
 
-    return await openDatabase(
-      path,
-      version: 2,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future _onCreate(Database db, int version) async {
@@ -51,16 +46,11 @@ class DatabaseHelper {
         totalWorkTime INTEGER NOT NULL,
         estimateTime INTEGER,
         dueTime TEXT,
-        status TEXT NOT NULL
+        status TEXT NOT NULL,
+        estimateTime INTEGER,
+        dueTime TEXT
       )
     ''');
-  }
-
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('ALTER TABLE tasks ADD COLUMN estimateTime INTEGER');
-      await db.execute('ALTER TABLE tasks ADD COLUMN dueTime TEXT');
-    }
   }
 
   Future<List<Map<String, dynamic>>> getTasks() async {
