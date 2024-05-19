@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../database/database_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 const int pomodoroTime = 5; // 5 seconds for testing
 const int breakTime = 3; // 3 seconds for testing
@@ -15,9 +17,9 @@ class TaskDetailScreen extends StatefulWidget {
   _TaskDetailScreenState createState() => _TaskDetailScreenState();
 }
 
-class _TaskDetailScreenState extends State<TaskDetailScreen> {
+class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  Map<String, dynamic>? _task;
+  Map<String, dynamic> _task = {}; // Default to an empty map
   int _remainingTime = pomodoroTime;
   bool _isWorking = true;
   Timer? _timer;
@@ -29,6 +31,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _loadTask();
     _resetPomodoro(); // Reset Pomodoro time when entering the screen
     _initializeNotifications(); // Initialize notifications
+    _setupTray();
   }
 
   Future<void> _initializeNotifications() async {
@@ -65,7 +68,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Future<void> _loadTask() async {
     final tasks = await _dbHelper.getTasks();
     setState(() {
-      _task = tasks.firstWhere((t) => t['id'] == widget.taskId);
+      _task = tasks.firstWhere(
+        (t) => t['id'] == widget.taskId,
+        orElse: () =>
+            <String, dynamic>{}, // Return an empty map instead of null
+      );
     });
   }
 
@@ -87,7 +94,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         if (_isWorking) {
           _updateTaskWorkTime();
         }
-        _savePomodoro();
+        _updateTray();
       });
     });
   }
@@ -106,29 +113,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   void _resetPomodoro() {
     _isWorking = true;
     _remainingTime = pomodoroTime;
+    _updateTray();
   }
 
   void _toggleWorkBreak() {
     setState(() {
       _isWorking = !_isWorking;
       _remainingTime = _isWorking ? pomodoroTime : breakTime;
-    });
-  }
-
-  Future<void> _savePomodoro() async {
-    await _dbHelper.insertPomodoro({
-      'id': widget.taskId,
-      'isWorking': _isWorking ? 1 : 0,
-      'remainingTime': _remainingTime,
+      _updateTray();
     });
   }
 
   Future<void> _updateTaskWorkTime() async {
-    if (_task != null) {
-      final updatedWorkTime = _task!['totalWorkTime'] + 1;
+    if (_task.isNotEmpty) {
+      final updatedWorkTime = _task['totalWorkTime'] + 1;
       await _dbHelper.updateTask({
         'id': widget.taskId,
-        'name': _task!['name'],
+        'name': _task['name'],
         'totalWorkTime': updatedWorkTime,
       });
       _loadTask(); // Refresh the task details
@@ -141,6 +142,47 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  void _setupTray() async {
+    await trayManager.setIcon('assets/app_icon.png');
+
+    Menu menu = Menu(
+      items: [
+        MenuItem(
+          key: 'show',
+          label: 'Show Application',
+        ),
+        MenuItem(
+          key: 'quit',
+          label: 'Quit',
+        ),
+      ],
+    );
+    await trayManager.setContextMenu(menu);
+    trayManager.addListener(this);
+  }
+
+  void _updateTray() {
+    final formattedTime = formatDuration(_remainingTime);
+    trayManager.setTitle(formattedTime);
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    switch (menuItem.key) {
+      case 'show':
+        windowManager.show();
+        break;
+      case 'quit':
+        windowManager.close();
+        break;
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -150,23 +192,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_task == null) {
+    if (_task.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: Text('Task Detail'),
         ),
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Text('Task not found.'),
         ),
       );
     }
 
-    final totalWorkTimeFormatted = formatDuration(_task!['totalWorkTime']);
+    final totalWorkTimeFormatted = formatDuration(_task['totalWorkTime']);
     final formattedRemainingTime = formatDuration(_remainingTime);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_task!['name']),
+        title: Text(_task['name']),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
