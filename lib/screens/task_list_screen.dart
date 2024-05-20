@@ -50,10 +50,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   void _showAddTaskDialog() {
     TextEditingController _taskNameController = TextEditingController();
-    TextEditingController _taskEstimateTimeController = TextEditingController();
+    TextEditingController _taskEstimateHoursController =
+        TextEditingController();
+    TextEditingController _taskEstimateMinutesController =
+        TextEditingController();
     DateTime? _dueTime;
 
-    Future<void> _selectDueTime(BuildContext context) async {
+    Future<void> _selectDueTime(
+        BuildContext context, void Function(void Function()) setState) async {
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
@@ -82,61 +86,84 @@ class _TaskListScreenState extends State<TaskListScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // Square corners
-          ),
-          title: Text('Add Task'),
-          content: Container(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _taskNameController,
-                  decoration: InputDecoration(hintText: 'Task Name'),
-                ),
-                TextField(
-                  controller: _taskEstimateTimeController,
-                  decoration:
-                      InputDecoration(hintText: 'Estimate Time (minutes)'),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 10),
-                Row(
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero, // Square corners
+              ),
+              title: Text('Add Task'),
+              content: Container(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_dueTime == null
-                        ? 'Select Due Time'
-                        : DateFormat('yyyy-MM-dd HH:mm').format(_dueTime!)),
-                    IconButton(
-                      icon: Icon(Icons.calendar_today),
-                      onPressed: () {
-                        _selectDueTime(context);
-                      },
+                    TextField(
+                      controller: _taskNameController,
+                      decoration: InputDecoration(hintText: 'Task Name'),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _taskEstimateHoursController,
+                            decoration: InputDecoration(labelText: 'Hours'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _taskEstimateMinutesController,
+                            decoration: InputDecoration(labelText: 'Minutes'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          _dueTime == null
+                              ? 'Select Due Time'
+                              : DateFormat('d MMM yyyy HH:mm')
+                                  .format(_dueTime!),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () {
+                            _selectDueTime(context, setState);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final int hours =
+                        int.tryParse(_taskEstimateHoursController.text) ?? 0;
+                    final int minutes =
+                        int.tryParse(_taskEstimateMinutesController.text) ?? 0;
+                    final estimateTime = (hours * 60) + minutes;
+                    final dueTime = _dueTime ?? DateTime.now();
+                    _addTask(_taskNameController.text, estimateTime, dueTime);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Add'),
+                ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final estimateTime =
-                    int.tryParse(_taskEstimateTimeController.text) ?? 0;
-                final dueTime = _dueTime ?? DateTime.now();
-                _addTask(_taskNameController.text, estimateTime, dueTime);
-                Navigator.pop(context);
-              },
-              child: Text('Add'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -145,11 +172,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
   void _showEditTaskDialog(Map<String, dynamic> task) {
     TextEditingController _taskNameController =
         TextEditingController(text: task['name']);
-    TextEditingController _taskEstimateTimeController =
-        TextEditingController(text: task['estimateTime'].toString());
+    TextEditingController _taskEstimateHoursController =
+        TextEditingController(text: (task['estimateTime'] ~/ 60).toString());
+    TextEditingController _taskEstimateMinutesController =
+        TextEditingController(text: (task['estimateTime'] % 60).toString());
     DateTime? _dueTime = DateTime.tryParse(task['dueTime']);
 
-    Future<void> _selectDueTime(BuildContext context) async {
+    Future<void> _selectDueTime(
+        BuildContext context, void Function(void Function()) setState) async {
       final DateTime? pickedDate = await showDatePicker(
         context: context,
         initialDate: _dueTime ?? DateTime.now(),
@@ -178,63 +208,87 @@ class _TaskListScreenState extends State<TaskListScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // Square corners
-          ),
-          title: Text('Edit Task'),
-          content: Container(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _taskNameController,
-                  decoration: InputDecoration(hintText: 'Task Name'),
-                ),
-                TextField(
-                  controller: _taskEstimateTimeController,
-                  decoration:
-                      InputDecoration(hintText: 'Estimate Time (minutes)'),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 10),
-                Row(
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.zero, // Square corners
+              ),
+              title: Text('Edit Task'),
+              content: Container(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_dueTime == null
-                        ? 'Select Due Time'
-                        : DateFormat('yyyy-MM-dd HH:mm').format(_dueTime!)),
-                    IconButton(
-                      icon: Icon(Icons.calendar_today),
-                      onPressed: () {
-                        _selectDueTime(context);
-                      },
+                    TextField(
+                      controller: _taskNameController,
+                      decoration: InputDecoration(hintText: 'Task Name'),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _taskEstimateHoursController,
+                            decoration: InputDecoration(labelText: 'Hours'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _taskEstimateMinutesController,
+                            decoration: InputDecoration(labelText: 'Minutes'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          _dueTime == null
+                              ? 'Select Due Time'
+                              : DateFormat('d MMM yyyy HH:mm')
+                                  .format(_dueTime!),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () {
+                            _selectDueTime(context, setState);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final int hours =
+                        int.tryParse(_taskEstimateHoursController.text) ?? 0;
+                    final int minutes =
+                        int.tryParse(_taskEstimateMinutesController.text) ?? 0;
+                    final estimateTime = (hours * 60) + minutes;
+                    final updatedTask = Map<String, dynamic>.from(task);
+                    updatedTask['name'] = _taskNameController.text;
+                    updatedTask['estimateTime'] = estimateTime;
+                    updatedTask['dueTime'] = _dueTime?.toIso8601String();
+                    _updateTask(updatedTask);
+                    Navigator.pop(context);
+                  },
+                  child: Text('Save'),
+                ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final updatedTask = Map<String, dynamic>.from(task);
-                updatedTask['name'] = _taskNameController.text;
-                updatedTask['estimateTime'] =
-                    int.tryParse(_taskEstimateTimeController.text) ?? 0;
-                updatedTask['dueTime'] = _dueTime?.toIso8601String();
-                _updateTask(updatedTask);
-                Navigator.pop(context);
-              },
-              child: Text('Save'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -300,6 +354,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return formatter.format(dateTime);
   }
 
+  String formatEstimateTime(int totalMinutes) {
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:00';
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> doingTasks =
@@ -333,7 +393,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               final task = doingTasks[index];
               final totalWorkTimeFormatted =
                   formatDuration(task['totalWorkTime']);
-              final estimateTime = task['estimateTime'];
+              final estimateTime = formatEstimateTime(task['estimateTime']);
               final dueTimeFormatted = formatDateTime(task['dueTime']);
               return Card(
                 color: Colors.lightBlue[200], // Change color to light blue
@@ -350,7 +410,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                          '$dueTimeFormatted | Est: $estimateTime min | Worked: $totalWorkTimeFormatted')
+                          '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
                     ],
                   ),
                   leading: Checkbox(
@@ -409,7 +469,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 final task = completedTasks[index];
                 final totalWorkTimeFormatted =
                     formatDuration(task['totalWorkTime']);
-                final estimateTime = task['estimateTime'];
+                final estimateTime = formatEstimateTime(task['estimateTime']);
                 final dueTimeFormatted = formatDateTime(task['dueTime']);
                 return Card(
                   color: Colors.grey[300], // Change color to grey
@@ -426,7 +486,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            '$dueTimeFormatted | Est: $estimateTime min | Worked: $totalWorkTimeFormatted')
+                            '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
                       ],
                     ),
                     leading: Checkbox(
