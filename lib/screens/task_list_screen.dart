@@ -293,10 +293,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   String formatDateTime(String? dateTimeString) {
     if (dateTimeString == null || dateTimeString.isEmpty) {
-      return 'No due date';
+      return 'No due';
     }
     final dateTime = DateTime.parse(dateTimeString);
-    final formatter = DateFormat('yyyy-MM-dd HH:mm');
+    final formatter = DateFormat('d MMM HH:mm');
     return formatter.format(dateTime);
   }
 
@@ -350,9 +350,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Work Time: $totalWorkTimeFormatted'),
-                      Text('Estimate Time: $estimateTime minutes'),
-                      Text('Due Time: $dueTimeFormatted'),
+                      Text(
+                          '$dueTimeFormatted | Est: $estimateTime min | Work: $totalWorkTimeFormatted')
                     ],
                   ),
                   leading: Checkbox(
@@ -432,9 +431,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Work Time: $totalWorkTimeFormatted'),
-                        Text('Estimate Time: $estimateTime minutes'),
-                        Text('Due Time: $dueTimeFormatted'),
+                        Text(
+                            '$dueTimeFormatted | Est: $estimateTime min | Work: $totalWorkTimeFormatted')
                       ],
                     ),
                     leading: Checkbox(
