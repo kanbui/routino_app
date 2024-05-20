@@ -394,7 +394,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                 child: Column(
                   children: [
                     Text(
-                      'Total Work Time: $totalWorkTimeFormatted',
+                      'Worked Time: $totalWorkTimeFormatted',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     SizedBox(height: 20),
@@ -451,8 +451,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                           formatDuration(subtask['totalWorkTime']);
                       return Card(
                         color: subtask['status'] == 'doing'
-                            ? Colors.lightBlueAccent
-                            : Colors.grey,
+                            ? Colors.lightBlue[200]
+                            : Colors.grey[300],
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.zero, // Remove rounded corners
@@ -493,7 +493,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             ],
                           ),
                           subtitle:
-                              Text('Work Time: $subtaskTotalWorkTimeFormatted'),
+                              Text('Worked: $subtaskTotalWorkTimeFormatted'),
                         ),
                       );
                     }).toList(),

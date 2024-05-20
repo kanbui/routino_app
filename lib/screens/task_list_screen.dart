@@ -309,13 +309,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Task List'),
+        title: Text('My Routino'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              Navigator.pushNamed(context, '/settings');
-            },
+          Container(
+            margin:
+                EdgeInsets.only(right: 6.0), // Thêm khoảng cách bên phải 20px
+            child: IconButton(
+              icon: Icon(Icons.settings, size: 26.0),
+              onPressed: () {
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
           ),
         ],
       ),
@@ -332,7 +336,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               final estimateTime = task['estimateTime'];
               final dueTimeFormatted = formatDateTime(task['dueTime']);
               return Card(
-                color: Colors.lightBlueAccent, // Change color to light blue
+                color: Colors.lightBlue[200], // Change color to light blue
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero, // Remove rounded corners
                 ),
@@ -341,17 +345,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 child: ListTile(
                   title: Text(
                     task['name'],
-                    style: TextStyle(
-                      decoration: task['status'] == 'completed'
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                          '$dueTimeFormatted | Est: $estimateTime min | Work: $totalWorkTimeFormatted')
+                          '$dueTimeFormatted | Est: $estimateTime min | Worked: $totalWorkTimeFormatted')
                     ],
                   ),
                   leading: Checkbox(
@@ -413,7 +412,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 final estimateTime = task['estimateTime'];
                 final dueTimeFormatted = formatDateTime(task['dueTime']);
                 return Card(
-                  color: Colors.grey, // Change color to grey
+                  color: Colors.grey[300], // Change color to grey
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero, // Remove rounded corners
                   ),
@@ -422,17 +421,12 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   child: ListTile(
                     title: Text(
                       task['name'],
-                      style: TextStyle(
-                        decoration: task['status'] == 'completed'
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                            '$dueTimeFormatted | Est: $estimateTime min | Work: $totalWorkTimeFormatted')
+                            '$dueTimeFormatted | Est: $estimateTime min | Worked: $totalWorkTimeFormatted')
                       ],
                     ),
                     leading: Checkbox(
@@ -466,9 +460,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddTaskDialog,
-        child: Icon(Icons.add),
-      ),
+          onPressed: _showAddTaskDialog, child: Icon(Icons.add)),
     );
   }
 }

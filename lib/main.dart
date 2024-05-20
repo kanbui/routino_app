@@ -26,6 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Routino App',
+      debugShowCheckedModeBanner: false, // Ẩn chữ "DEBUG"
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

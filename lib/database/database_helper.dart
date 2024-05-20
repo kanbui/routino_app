@@ -55,7 +55,7 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getTasks() async {
     Database db = await database;
-    return await db.query('tasks');
+    return await db.query('tasks', orderBy: 'dueTime ASC, id ASC');
   }
 
   Future<int> insertTask(Map<String, dynamic> task) async {
