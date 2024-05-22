@@ -51,6 +51,16 @@ class DatabaseHelper {
         dueTime TEXT
       )
     ''');
+    await db.execute('''
+      CREATE TABLE subtasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parentTaskId INTEGER,
+        name TEXT,
+        totalWorkTime INTEGER DEFAULT 0,
+        status TEXT,
+        FOREIGN KEY (parentTaskId) REFERENCES tasks (id) ON DELETE CASCADE
+      )
+    ''');
   }
 
   Future<List<Map<String, dynamic>>> getTasks() async {
