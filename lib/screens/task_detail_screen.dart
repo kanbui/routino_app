@@ -6,6 +6,7 @@ import '../database/database_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:intl/intl.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -124,6 +125,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     });
   }
 
+  String formatDateTime(String? dateTimeString) {
+    if (dateTimeString == null || dateTimeString.isEmpty) {
+      return 'No due';
+    }
+    final dateTime = DateTime.parse(dateTimeString);
+    final formatter = DateFormat('d MMM HH:mm');
+    return formatter.format(dateTime);
+  }
+
   void _showAddNoteDialog() {
     showDialog(
       context: context,
@@ -162,6 +172,33 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
               }
             });
           },
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteNote(int noteId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Delete Note'),
+          content: Text('Are you sure you want to delete this note?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteNote(noteId);
+                Navigator.pop(context);
+              },
+              child: Text('Delete'),
+            ),
+          ],
         );
       },
     );
@@ -571,6 +608,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ..._notes.map((note) {
+                      final createdTime = formatDateTime(note['createdAt']);
                       return Card(
                         color: Colors.teal[100],
                         shape: RoundedRectangleBorder(
@@ -582,7 +620,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                         elevation: 2,
                         child: ListTile(
                           title: Text('${note['icon']} ${note['content']}'),
-                          subtitle: Text('Rating: ${note['point']}'),
+                          subtitle:
+                              Text('${createdTime} | ${note['point']} point'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -595,7 +634,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               IconButton(
                                 icon: Icon(Icons.delete),
                                 onPressed: () {
-                                  _deleteNote(note['id']);
+                                  _confirmDeleteNote(note['id']);
                                 },
                               ),
                             ],
@@ -655,12 +694,14 @@ class _NoteDialogState extends State<NoteDialog> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      final DateTime now = DateTime.now();
       final note = {
         'id': widget.note?['id'],
         'icon': _iconController.text,
         'content': _contentController.text,
         'task_id': widget.taskId,
         'point': _point,
+        'createdAt': now.toIso8601String()
       };
       if (widget.note == null) {
         // Add new note
