@@ -350,8 +350,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
       return 'No due';
     }
     final dateTime = DateTime.parse(dateTimeString);
-    final formatter = DateFormat('d MMM HH:mm');
-    return formatter.format(dateTime);
+    final now = DateTime.now();
+
+    if (dateTime.year == now.year &&
+        dateTime.month == now.month &&
+        dateTime.day == now.day) {
+      // Nếu là ngày hôm nay
+      final formatter = DateFormat('HH:mm');
+      return 'Today ${formatter.format(dateTime)}';
+    } else {
+      // Nếu là ngày khác
+      final formatter = DateFormat('d MMM HH:mm');
+      return formatter.format(dateTime);
+    }
   }
 
   String formatEstimateTime(int totalMinutes) {
