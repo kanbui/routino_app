@@ -496,15 +496,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                       ],
                     ),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _showAddSubtaskDialog,
-                      child: Text('Add Subtask'),
-                    ),
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      ElevatedButton(
+                        onPressed: _showAddSubtaskDialog,
+                        child: Text('Add Subtask'),
+                      ),
+                      SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: _showAddNoteDialog,
+                        child: Text('Add Note'),
+                      ),
+                    ]),
                     SizedBox(height: 20),
-                    Text(
-                      'Subtasks:',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    if (_subtasks.isNotEmpty)
+                      Text(
+                        'Subtasks:',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ..._subtasks.map((subtask) {
                       final subtaskTotalWorkTimeFormatted =
                           formatDuration(subtask['totalWorkTime']);
@@ -557,17 +565,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                       );
                     }).toList(),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _showAddNoteDialog,
-                      child: Text('Add Note'),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Notes:',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    if (_notes.isNotEmpty)
+                      Text(
+                        'Notes:',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ..._notes.map((note) {
                       return Card(
+                        color: Colors.teal[100],
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.zero, // Remove rounded corners
@@ -576,7 +581,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         elevation: 2,
                         child: ListTile(
-                          title: Text(note['content']),
+                          title: Text('${note['icon']} ${note['content']}'),
                           subtitle: Text('Rating: ${note['point']}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -613,7 +618,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
 class NoteDialog extends StatefulWidget {
   final int taskId;
   final Map<String, dynamic>? note;
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   final Function(Map<String, dynamic>)? onNoteAdded;
   final Function(Map<String, dynamic>)? onNoteEdited;
 
@@ -629,11 +633,13 @@ class NoteDialog extends StatefulWidget {
 }
 
 class _NoteDialogState extends State<NoteDialog> {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   final _formKey = GlobalKey<FormState>();
   String _icon = '';
   String _content = '';
   int _point = 1;
+  TextEditingController _contentController = TextEditingController();
+  TextEditingController _iconController = TextEditingController();
+  final DatabaseHelper _dbHelper = DatabaseHelper(); // Sử dụng _dbHelper
 
   @override
   void initState() {
@@ -642,6 +648,8 @@ class _NoteDialogState extends State<NoteDialog> {
       _icon = widget.note!['icon'];
       _content = widget.note!['content'];
       _point = widget.note!['point'];
+      _iconController.text = _icon;
+      _contentController.text = _content;
     }
   }
 
@@ -649,8 +657,8 @@ class _NoteDialogState extends State<NoteDialog> {
     if (_formKey.currentState!.validate()) {
       final note = {
         'id': widget.note?['id'],
-        'icon': _icon,
-        'content': _content,
+        'icon': _iconController.text,
+        'content': _contentController.text,
         'task_id': widget.taskId,
         'point': _point,
       };
@@ -678,38 +686,42 @@ class _NoteDialogState extends State<NoteDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.zero, // Square corners
+      ),
       title: Text(widget.note == null ? 'Add Note' : 'Edit Note'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Icon'),
-              initialValue: _icon,
-              onChanged: (value) => _icon = value,
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter an icon' : null,
-            ),
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Content'),
-              initialValue: _content,
-              onChanged: (value) => _content = value,
-              validator: (value) =>
-                  value!.isEmpty ? 'Please enter content' : null,
-            ),
-            DropdownButtonFormField<int>(
-              decoration: InputDecoration(labelText: 'Point'),
-              value: _point,
-              onChanged: (value) => setState(() => _point = value!),
-              items: List.generate(
-                  5,
-                  (index) => DropdownMenuItem(
-                        value: index + 1,
-                        child: Text('${index + 1}'),
-                      )),
-            ),
-          ],
+      content: Container(
+        width: double.maxFinite,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _iconController,
+                decoration: InputDecoration(hintText: 'Icon'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter an icon' : null,
+              ),
+              TextFormField(
+                controller: _contentController,
+                decoration: InputDecoration(hintText: 'Content'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter content' : null,
+              ),
+              DropdownButtonFormField<int>(
+                decoration: InputDecoration(labelText: 'Point'),
+                value: _point,
+                onChanged: (value) => setState(() => _point = value!),
+                items: List.generate(
+                    5,
+                    (index) => DropdownMenuItem(
+                          value: index + 1,
+                          child: Text('${index + 1}'),
+                        )),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -717,9 +729,9 @@ class _NoteDialogState extends State<NoteDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text('Cancel'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: _submit,
-          child: Text(widget.note == null ? 'Add Note' : 'Edit Note'),
+          child: Text(widget.note == null ? 'Add' : 'Save'),
         ),
       ],
     );
