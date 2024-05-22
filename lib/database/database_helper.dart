@@ -35,7 +35,7 @@ class DatabaseHelper {
 
     print('Database path: $path'); // Print the database path
 
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future _onCreate(Database db, int version) async {
@@ -46,9 +46,7 @@ class DatabaseHelper {
         totalWorkTime INTEGER NOT NULL,
         estimateTime INTEGER,
         dueTime TEXT,
-        status TEXT NOT NULL,
-        estimateTime INTEGER,
-        dueTime TEXT
+        status TEXT NOT NULL
       )
     ''');
     await db.execute('''
@@ -61,6 +59,31 @@ class DatabaseHelper {
         FOREIGN KEY (parentTaskId) REFERENCES tasks (id) ON DELETE CASCADE
       )
     ''');
+    await db.execute('''
+      CREATE TABLE notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        icon TEXT,
+        content TEXT,
+        task_id INTEGER,
+        point INTEGER,
+        FOREIGN KEY(task_id) REFERENCES tasks(id)
+      )
+    ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE notes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          icon TEXT,
+          content TEXT,
+          task_id INTEGER,
+          point INTEGER,
+          FOREIGN KEY(task_id) REFERENCES tasks(id)
+        )
+      ''');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTasks() async {
@@ -104,5 +127,27 @@ class DatabaseHelper {
   Future<int> deleteSubtask(int id) async {
     Database db = await database;
     return await db.delete('subtasks', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Thêm các hàm CRUD cho bảng notes
+
+  Future<int> insertNote(Map<String, dynamic> note) async {
+    Database db = await database;
+    return await db.insert('notes', note);
+  }
+
+  Future<int> updateNote(Map<String, dynamic> note) async {
+    Database db = await database;
+    return await db.update('notes', note, where: 'id = ?', whereArgs: [note['id']]);
+  }
+
+  Future<int> deleteNote(int id) async {
+    Database db = await database;
+    return await db.delete('notes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> getNotesByTaskId(int taskId) async {
+    Database db = await database;
+    return await db.query('notes', where: 'task_id = ?', whereArgs: [taskId]);
   }
 }

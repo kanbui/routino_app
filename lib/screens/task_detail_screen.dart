@@ -20,6 +20,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   Map<String, dynamic> _task = {}; // Default to an empty map
   List<Map<String, dynamic>> _subtasks = [];
+  List<Map<String, dynamic>> _notes = [];
   int _remainingTime = 0;
   bool _isWorking = true;
   Timer? _timer;
@@ -34,6 +35,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     _loadSettings();
     _loadTask();
     _loadSubtasks();
+    _loadNotes(); // Load notes for the task
     _initializeNotifications(); // Initialize notifications
     _setupTray();
   }
@@ -112,6 +114,63 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     });
     setState(() {
       _subtasks = sortedSubtasks;
+    });
+  }
+
+  Future<void> _loadNotes() async {
+    final notes = await _dbHelper.getNotesByTaskId(widget.taskId);
+    setState(() {
+      _notes = notes;
+    });
+  }
+
+  void _showAddNoteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return NoteDialog(
+          taskId: widget.taskId,
+          onNoteAdded: (note) {
+            setState(() {
+              List<Map<String, dynamic>> updatedNotes =
+                  List.from(_notes); // Sao chép danh sách trước khi thêm
+              updatedNotes.add(note);
+              _notes = updatedNotes;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditNoteDialog(Map<String, dynamic> note) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return NoteDialog(
+          taskId: widget.taskId,
+          note: note,
+          onNoteEdited: (updatedNote) {
+            setState(() {
+              List<Map<String, dynamic>> updatedNotes =
+                  List.from(_notes); // Sao chép danh sách trước khi cập nhật
+              int index =
+                  updatedNotes.indexWhere((n) => n['id'] == updatedNote['id']);
+              if (index != -1) {
+                updatedNotes[index] = updatedNote;
+                _notes = updatedNotes;
+              }
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteNote(int noteId) async {
+    await _dbHelper.deleteNote(noteId);
+    setState(() {
+      _notes.removeWhere((note) => note['id'] == noteId);
     });
   }
 
@@ -497,6 +556,48 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                         ),
                       );
                     }).toList(),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _showAddNoteDialog,
+                      child: Text('Add Note'),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Notes:',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    ..._notes.map((note) {
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.zero, // Remove rounded corners
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(note['content']),
+                          subtitle: Text('Rating: ${note['point']}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () {
+                                  _showEditNoteDialog(note);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () {
+                                  _deleteNote(note['id']);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ],
                 ),
               ),
@@ -505,6 +606,122 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
           ),
         ),
       ),
+    );
+  }
+}
+
+class NoteDialog extends StatefulWidget {
+  final int taskId;
+  final Map<String, dynamic>? note;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final Function(Map<String, dynamic>)? onNoteAdded;
+  final Function(Map<String, dynamic>)? onNoteEdited;
+
+  NoteDialog({
+    required this.taskId,
+    this.note,
+    this.onNoteAdded,
+    this.onNoteEdited,
+  });
+
+  @override
+  _NoteDialogState createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<NoteDialog> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final _formKey = GlobalKey<FormState>();
+  String _icon = '';
+  String _content = '';
+  int _point = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.note != null) {
+      _icon = widget.note!['icon'];
+      _content = widget.note!['content'];
+      _point = widget.note!['point'];
+    }
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      final note = {
+        'id': widget.note?['id'],
+        'icon': _icon,
+        'content': _content,
+        'task_id': widget.taskId,
+        'point': _point,
+      };
+      if (widget.note == null) {
+        // Add new note
+        _dbHelper.insertNote(note).then((id) {
+          note['id'] = id;
+          if (widget.onNoteAdded != null) {
+            widget.onNoteAdded!(note);
+          }
+          Navigator.of(context).pop();
+        });
+      } else {
+        // Edit existing note
+        _dbHelper.updateNote(note).then((_) {
+          if (widget.onNoteEdited != null) {
+            widget.onNoteEdited!(note);
+          }
+          Navigator.of(context).pop();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.note == null ? 'Add Note' : 'Edit Note'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Icon'),
+              initialValue: _icon,
+              onChanged: (value) => _icon = value,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter an icon' : null,
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Content'),
+              initialValue: _content,
+              onChanged: (value) => _content = value,
+              validator: (value) =>
+                  value!.isEmpty ? 'Please enter content' : null,
+            ),
+            DropdownButtonFormField<int>(
+              decoration: InputDecoration(labelText: 'Point'),
+              value: _point,
+              onChanged: (value) => setState(() => _point = value!),
+              items: List.generate(
+                  5,
+                  (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                      )),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: Text(widget.note == null ? 'Add Note' : 'Edit Note'),
+        ),
+      ],
     );
   }
 }
