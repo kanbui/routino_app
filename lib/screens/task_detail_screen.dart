@@ -92,13 +92,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   Future<void> _loadTask() async {
-    final tasks = await _dbHelper.getTasks();
+    final task = await _dbHelper.getTaskById(widget.taskId);
     setState(() {
-      _task = tasks.firstWhere(
-        (t) => t['id'] == widget.taskId,
-        orElse: () =>
-            <String, dynamic>{}, // Return an empty map instead of null
-      );
+      _task = task;
     });
   }
 

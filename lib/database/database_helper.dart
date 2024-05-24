@@ -99,10 +99,64 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTasks() async {
+  Future<List<Map<String, dynamic>>> getTasks(String timeFilter) async {
     Database db = await database;
-    return await db.query('tasks',
-        orderBy: 'DATE(dueTime) ASC, priority ASC, dueTime ASC');
+    String whereClause = '';
+    List<dynamic> whereArgs = [];
+
+    DateTime now = DateTime.now();
+    switch (timeFilter) {
+      case 'today':
+        whereClause = 'DATE(dueTime) = DATE(?)';
+        whereArgs = [now.toIso8601String()];
+        break;
+      case 'tomorrow':
+        DateTime tomorrow = now.add(Duration(days: 1));
+        whereClause = 'DATE(dueTime) = DATE(?)';
+        whereArgs = [tomorrow.toIso8601String()];
+        break;
+      case 'this_week':
+        DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        DateTime endOfWeek = startOfWeek.add(Duration(days: 6));
+        whereClause = 'DATE(dueTime) BETWEEN DATE(?) AND DATE(?)';
+        whereArgs = [
+          startOfWeek.toIso8601String(),
+          endOfWeek.toIso8601String()
+        ];
+        break;
+      case 'this_month':
+        DateTime startOfMonth = DateTime(now.year, now.month, 1);
+        DateTime endOfMonth = DateTime(now.year, now.month + 1, 0);
+        whereClause = 'DATE(dueTime) BETWEEN DATE(?) AND DATE(?)';
+        whereArgs = [
+          startOfMonth.toIso8601String(),
+          endOfMonth.toIso8601String()
+        ];
+        break;
+      default:
+        // No filter, get all tasks
+        whereClause = '';
+        whereArgs = [];
+        break;
+    }
+
+    return await db.query(
+      'tasks',
+      where: whereClause.isEmpty ? null : whereClause,
+      whereArgs: whereArgs.isEmpty ? null : whereArgs,
+      orderBy: 'DATE(dueTime) ASC, priority ASC, dueTime ASC',
+    );
+  }
+
+  Future<Map<String, dynamic>> getTaskById(int taskId) async {
+    Database db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+
+    return result.first;
   }
 
   Future<int> insertTask(Map<String, dynamic> task) async {

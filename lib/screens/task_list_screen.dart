@@ -13,6 +13,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   List<Map<String, dynamic>> _tasks = [];
   bool _showCompletedTasks =
       false; // State to manage completed tasks visibility
+  String _selectedTimeFilter = 'all'; // Default time filter
 
   @override
   void initState() {
@@ -21,7 +22,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Future<void> _loadTasks() async {
-    final tasks = await _dbHelper.getTasks();
+    final tasks = await _dbHelper.getTasks(_selectedTimeFilter);
     setState(() {
       _tasks = tasks;
     });
@@ -462,141 +463,191 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ),
         ],
       ),
-      body: ListView(
+      body: Column(
         children: [
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: doingTasks.length,
-            itemBuilder: (context, index) {
-              final task = doingTasks[index];
-              final totalWorkTimeFormatted =
-                  formatDuration(task['totalWorkTime']);
-              final estimateTime = formatEstimateTime(task['estimateTime']);
-              final dueTimeFormatted = formatDateTime(task['dueTime']);
-              return Card(
-                color: _getColorByPriority(task[
-                    'priority']), // Colors.lightBlue[200], // Change color to light blue
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero, // Remove rounded corners
-                ),
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                elevation: 2,
-                child: ListTile(
-                  title: Text(
-                    task['name'],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
-                    ],
-                  ),
-                  leading: Checkbox(
-                    value: task['status'] == 'completed',
-                    onChanged: (value) {
-                      _toggleTaskStatus(task);
-                    },
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          _showEditTaskDialog(task);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          _confirmDeleteTask(task['id']);
-                        },
-                      ),
-                    ],
-                  ),
-                  onTap: () => _openTaskDetail(task['id']),
-                ),
-              );
-            },
-          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Completed Tasks'),
-                IconButton(
-                  icon: Icon(
-                    _showCompletedTasks ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  onPressed: () {
+            padding: const EdgeInsets.all(10.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IntrinsicWidth(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedTimeFilter,
+                  items: [
+                    DropdownMenuItem(value: 'all', child: Text('Tất cả')),
+                    DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
+                    DropdownMenuItem(
+                        value: 'tomorrow', child: Text('Ngày Mai')),
+                    DropdownMenuItem(
+                        value: 'this_week', child: Text('Tuần Này')),
+                    DropdownMenuItem(
+                        value: 'this_month', child: Text('Tháng Này')),
+                  ],
+                  onChanged: (value) {
                     setState(() {
-                      _showCompletedTasks = !_showCompletedTasks;
+                      _selectedTimeFilter = value!;
                     });
+                    _loadTasks();
+                  },
+                  decoration: InputDecoration(
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                  ),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                  ),
+                  dropdownColor: Colors.white,
+                  icon: Icon(Icons.arrow_drop_down),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: [
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: doingTasks.length,
+                  itemBuilder: (context, index) {
+                    final task = doingTasks[index];
+                    final totalWorkTimeFormatted =
+                        formatDuration(task['totalWorkTime']);
+                    final estimateTime =
+                        formatEstimateTime(task['estimateTime']);
+                    final dueTimeFormatted = formatDateTime(task['dueTime']);
+                    return Card(
+                      color: _getColorByPriority(task['priority']),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.zero, // Remove rounded corners
+                      ),
+                      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      elevation: 2,
+                      child: ListTile(
+                        title: Text(
+                          task['name'],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
+                          ],
+                        ),
+                        leading: Checkbox(
+                          value: task['status'] == 'completed',
+                          onChanged: (value) {
+                            _toggleTaskStatus(task);
+                          },
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit),
+                              onPressed: () {
+                                _showEditTaskDialog(task);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                _confirmDeleteTask(task['id']);
+                              },
+                            ),
+                          ],
+                        ),
+                        onTap: () => _openTaskDetail(task['id']),
+                      ),
+                    );
                   },
                 ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Completed Tasks'),
+                      IconButton(
+                        icon: Icon(
+                          _showCompletedTasks
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _showCompletedTasks = !_showCompletedTasks;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                if (_showCompletedTasks)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: completedTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = completedTasks[index];
+                      final totalWorkTimeFormatted =
+                          formatDuration(task['totalWorkTime']);
+                      final estimateTime =
+                          formatEstimateTime(task['estimateTime']);
+                      final dueTimeFormatted = formatDateTime(task['dueTime']);
+                      return Card(
+                        color: Colors.grey[300], // Change color to grey
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.zero, // Remove rounded corners
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            task['name'],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
+                            ],
+                          ),
+                          leading: Checkbox(
+                            value: task['status'] == 'completed',
+                            onChanged: (value) {
+                              _toggleTaskStatus(task);
+                            },
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () {
+                                  _showEditTaskDialog(task);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () {
+                                  _confirmDeleteTask(task['id']);
+                                },
+                              ),
+                            ],
+                          ),
+                          onTap: () => _openTaskDetail(task['id']),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           ),
-          if (_showCompletedTasks)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: completedTasks.length,
-              itemBuilder: (context, index) {
-                final task = completedTasks[index];
-                final totalWorkTimeFormatted =
-                    formatDuration(task['totalWorkTime']);
-                final estimateTime = formatEstimateTime(task['estimateTime']);
-                final dueTimeFormatted = formatDateTime(task['dueTime']);
-                return Card(
-                  color: Colors.grey[300], // Change color to grey
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero, // Remove rounded corners
-                  ),
-                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  elevation: 2,
-                  child: ListTile(
-                    title: Text(
-                      task['name'],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
-                      ],
-                    ),
-                    leading: Checkbox(
-                      value: task['status'] == 'completed',
-                      onChanged: (value) {
-                        _toggleTaskStatus(task);
-                      },
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            _showEditTaskDialog(task);
-                          },
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            _confirmDeleteTask(task['id']);
-                          },
-                        ),
-                      ],
-                    ),
-                    onTap: () => _openTaskDetail(task['id']),
-                  ),
-                );
-              },
-            ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
