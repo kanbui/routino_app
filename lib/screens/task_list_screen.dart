@@ -27,13 +27,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
     });
   }
 
-  Future<void> _addTask(String name, int estimateTime, DateTime dueTime) async {
+  Future<void> _addTask(
+      String name, int estimateTime, DateTime dueTime, int priority) async {
     await _dbHelper.insertTask({
       'name': name,
       'totalWorkTime': 0,
       'estimateTime': estimateTime,
       'dueTime': dueTime.toIso8601String(),
       'status': 'doing',
+      'priority': priority
     });
     _loadTasks();
   }
@@ -55,6 +57,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     TextEditingController _taskEstimateMinutesController =
         TextEditingController();
     DateTime? _dueTime;
+    int _priority = 3; // Default to "normal"
 
     Future<void> _selectDueTime(
         BuildContext context, void Function(void Function()) setState) async {
@@ -124,11 +127,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     SizedBox(height: 10),
                     Row(
                       children: [
-                        Text(
-                          _dueTime == null
-                              ? 'Select Due Time'
-                              : DateFormat('d MMM yyyy HH:mm')
-                                  .format(_dueTime!),
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: _priority,
+                            items: [
+                              DropdownMenuItem(value: 1, child: Text('urgent')),
+                              DropdownMenuItem(value: 2, child: Text('high')),
+                              DropdownMenuItem(value: 3, child: Text('normal')),
+                              DropdownMenuItem(value: 4, child: Text('low')),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _priority = value ?? 3;
+                              });
+                            },
+                            decoration:
+                                InputDecoration(labelText: 'Độ ưu tiên'),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _dueTime == null
+                                ? 'Select Due Time'
+                                : DateFormat('d MMM yyyy HH:mm')
+                                    .format(_dueTime!),
+                          ),
                         ),
                         IconButton(
                           icon: Icon(Icons.calendar_today),
@@ -156,7 +180,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         int.tryParse(_taskEstimateMinutesController.text) ?? 0;
                     final estimateTime = (hours * 60) + minutes;
                     final dueTime = _dueTime ?? DateTime.now();
-                    _addTask(_taskNameController.text, estimateTime, dueTime);
+                    _addTask(_taskNameController.text, estimateTime, dueTime,
+                        _priority);
                     Navigator.pop(context);
                   },
                   child: Text('Add'),
@@ -177,6 +202,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
     TextEditingController _taskEstimateMinutesController =
         TextEditingController(text: (task['estimateTime'] % 60).toString());
     DateTime? _dueTime = DateTime.tryParse(task['dueTime']);
+    int _priority = task['priority'] != null
+        ? task['priority']
+        : 3; // default normal priority
 
     Future<void> _selectDueTime(
         BuildContext context, void Function(void Function()) setState) async {
@@ -246,11 +274,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     SizedBox(height: 10),
                     Row(
                       children: [
-                        Text(
-                          _dueTime == null
-                              ? 'Select Due Time'
-                              : DateFormat('d MMM yyyy HH:mm')
-                                  .format(_dueTime!),
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: _priority,
+                            items: [
+                              DropdownMenuItem(value: 1, child: Text('urgent')),
+                              DropdownMenuItem(value: 2, child: Text('high')),
+                              DropdownMenuItem(value: 3, child: Text('normal')),
+                              DropdownMenuItem(value: 4, child: Text('low')),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _priority = value ?? 3;
+                              });
+                            },
+                            decoration:
+                                InputDecoration(labelText: 'Độ ưu tiên'),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _dueTime == null
+                                ? 'Select Due Time'
+                                : DateFormat('d MMM yyyy HH:mm')
+                                    .format(_dueTime!),
+                          ),
                         ),
                         IconButton(
                           icon: Icon(Icons.calendar_today),
@@ -281,6 +330,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     updatedTask['name'] = _taskNameController.text;
                     updatedTask['estimateTime'] = estimateTime;
                     updatedTask['dueTime'] = _dueTime?.toIso8601String();
+                    updatedTask['priority'] = _priority;
                     _updateTask(updatedTask);
                     Navigator.pop(context);
                   },
@@ -336,6 +386,24 @@ class _TaskListScreenState extends State<TaskListScreen> {
     ).then((_) {
       _loadTasks(); // Reload tasks when returning from task detail screen
     });
+  }
+
+  Color _getColorByPriority(int? priority) {
+    if (priority == null) {
+      return Colors.white; // Màu mặc định nếu priority là null
+    }
+    switch (priority) {
+      case 1:
+        return Colors.purple[200]!; // Màu tím
+      case 2:
+        return Colors.red[200]!; // Màu đỏ
+      case 3:
+        return Colors.green[200]!; // Màu xanh
+      case 4:
+        return Colors.grey[200]!; // Màu trắng xám
+      default:
+        return Colors.white; // Màu mặc định nếu priority không khớp
+    }
   }
 
   String formatDuration(int totalSeconds) {
@@ -407,7 +475,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
               final estimateTime = formatEstimateTime(task['estimateTime']);
               final dueTimeFormatted = formatDateTime(task['dueTime']);
               return Card(
-                color: Colors.lightBlue[200], // Change color to light blue
+                color: _getColorByPriority(task[
+                    'priority']), // Colors.lightBlue[200], // Change color to light blue
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.zero, // Remove rounded corners
                 ),

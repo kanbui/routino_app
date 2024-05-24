@@ -26,6 +26,8 @@ class DatabaseHelper {
     // Determine the environment
     bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
 
+    const int currentDatabaseVersion = 3;
+
     String folderName = isDevelopment ? 'development' : 'production';
     String path = join(documentsDirectory.path, 'routino_app_db', folderName,
         'routino_app.db');
@@ -36,7 +38,9 @@ class DatabaseHelper {
     print('Database path: $path'); // Print the database path
 
     return await openDatabase(path,
-        version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
+        version: currentDatabaseVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade);
   }
 
   Future _onCreate(Database db, int version) async {
@@ -47,6 +51,7 @@ class DatabaseHelper {
         totalWorkTime INTEGER NOT NULL,
         estimateTime INTEGER,
         dueTime TEXT,
+        priority INTEGER,
         status TEXT NOT NULL
       )
     ''');
@@ -87,11 +92,17 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 3) {
+      await db.execute('''
+        ALTER TABLE tasks ADD priority INTEGER;
+      ''');
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTasks() async {
     Database db = await database;
-    return await db.query('tasks', orderBy: 'dueTime ASC, id ASC');
+    return await db.query('tasks',
+        orderBy: 'DATE(dueTime) ASC, priority ASC, dueTime ASC');
   }
 
   Future<int> insertTask(Map<String, dynamic> task) async {

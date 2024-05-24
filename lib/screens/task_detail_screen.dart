@@ -578,11 +578,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                         child: ListTile(
                           title: Text(
                             subtask['name'],
-                            style: TextStyle(
-                              decoration: subtask['status'] == 'completed'
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                            ),
                           ),
                           leading: Checkbox(
                             value: subtask['status'] == 'completed',
