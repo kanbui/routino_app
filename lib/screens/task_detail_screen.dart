@@ -26,6 +26,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   List<Map<String, dynamic>> _notes = [];
   List<Map<String, dynamic>> _timeLogs = [];
   int _remainingTime = 0;
+  int _elapsedSeconds = 0; // Elapsed time in seconds
   bool _isWorking = true;
   Timer? _timer;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
@@ -134,16 +135,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   void _logTime() async {
-    if (_pomodoroStartTime != null) {
+    if (_pomodoroStartTime != null && _elapsedSeconds > 0) {
       final endTime = DateTime.now();
-      final duration = endTime.difference(_pomodoroStartTime!).inSeconds;
       await _dbHelper.insertTimeLog({
         'task_id': widget.taskId,
         'start_time': _pomodoroStartTime!.toIso8601String(),
         'end_time': endTime.toIso8601String(),
-        'duration': duration,
+        'duration': _elapsedSeconds,
       });
       _pomodoroStartTime = null;
+      _elapsedSeconds = 0;
       _loadTimeLogs(); // Reload time logs after adding new log
     }
   }
@@ -248,10 +249,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   void _startTimer() {
     _timer?.cancel();
     _pomodoroStartTime = DateTime.now();
+    _elapsedSeconds = 0; // Reset elapsed time
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         if (_remainingTime > 0) {
           _remainingTime--;
+          _elapsedSeconds++; // Increment elapsed time
         } else {
           _stopTimer(); // Stop timer after a Pomodoro or break is complete
           _playSound(); // Play sound when Pomodoro or break is complete
