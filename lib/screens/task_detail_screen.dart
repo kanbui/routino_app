@@ -317,7 +317,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     await _audioPlayer.play(AssetSource('ting.mp3'));
   }
 
-  String formatDuration(int totalSeconds) {
+  String formatDuration(int? totalSeconds) {
+    if (totalSeconds == null) {
+      return '00:00';
+    }
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
@@ -355,7 +358,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
           subtask: subtask,
           onSave: (subtask) {
             if (subtask['id'] == null) {
-              _addSubtask(subtask['name']);
+              _addSubtask(subtask);
             } else {
               _updateSubtask(subtask);
             }
@@ -365,13 +368,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     );
   }
 
-  Future<void> _addSubtask(String name) async {
-    await _dbHelper.insertSubtask({
-      'parentTaskId': widget.taskId,
-      'name': name,
-      'totalWorkTime': 0,
-      'status': 'doing',
-    });
+  Future<void> _addSubtask(Map<String, dynamic> subtask) async {
+    subtask['parentTaskId'] = widget.taskId;
+    await _dbHelper.insertSubtask(subtask);
     _loadSubtasks();
   }
 
@@ -543,6 +542,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     ..._subtasks.map((subtask) {
                       final subtaskTotalWorkTimeFormatted =
                           formatDuration(subtask['totalWorkTime']);
+                      final estimateTime =
+                          formatDuration(subtask['estimateTime']);
                       return Card(
                         color: subtask['status'] == 'doing'
                             ? Colors.lightBlue[200]
@@ -581,8 +582,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               ),
                             ],
                           ),
-                          subtitle:
-                              Text('Worked: $subtaskTotalWorkTimeFormatted'),
+                          subtitle: Text(
+                              'Est: $estimateTime | Worked: $subtaskTotalWorkTimeFormatted'),
                         ),
                       );
                     }).toList(),

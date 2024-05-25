@@ -26,7 +26,7 @@ class DatabaseHelper {
     // Determine the environment
     bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
 
-    const int currentDatabaseVersion = 4;
+    const int currentDatabaseVersion = 5;
 
     String folderName = isDevelopment ? 'development' : 'production';
     String path = join(documentsDirectory.path, 'routino_app_db', folderName,
@@ -60,6 +60,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         parentTaskId INTEGER,
         name TEXT,
+        estimateTime INTEGER,
         totalWorkTime INTEGER DEFAULT 0,
         status TEXT,
         FOREIGN KEY (parentTaskId) REFERENCES tasks (id) ON DELETE CASCADE
@@ -118,6 +119,11 @@ class DatabaseHelper {
         FOREIGN KEY (task_id) REFERENCES tasks(id)
       )
     ''');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+      ALTER TABLE subtasks ADD estimateTime INTEGER;
+      ''');
     }
   }
 
