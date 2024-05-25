@@ -99,7 +99,8 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTasks(String timeFilter) async {
+  Future<List<Map<String, dynamic>>> getTasks(
+      String timeFilter, String priorityFilter) async {
     Database db = await database;
     String whereClause = '';
     List<dynamic> whereArgs = [];
@@ -138,6 +139,22 @@ class DatabaseHelper {
         whereClause = '';
         whereArgs = [];
         break;
+    }
+
+    if (priorityFilter != 'all') {
+      if (whereClause.isNotEmpty) {
+        whereClause += ' AND ';
+      }
+      whereClause += 'priority = ?';
+      whereArgs.add(priorityFilter == 'urgent'
+          ? 1
+          : priorityFilter == 'high'
+              ? 2
+              : priorityFilter == 'normal'
+                  ? 3
+                  : priorityFilter == 'low'
+                      ? 4
+                      : null);
     }
 
     return await db.query(
