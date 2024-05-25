@@ -8,6 +8,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:intl/intl.dart';
 import 'note_form.dart';
+import 'subtask_form.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -315,88 +316,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     trayManager.setTitle(formattedTime);
   }
 
-  void _showAddSubtaskDialog() {
-    TextEditingController _subtaskNameController = TextEditingController();
+  void _showSubtaskDialog({Map<String, dynamic>? subtask}) {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // Square corners
-          ),
-          title: Text('Add Subtask'),
-          content: Container(
-            width: double.maxFinite,
-            child: TextField(
-              controller: _subtaskNameController,
-              decoration: InputDecoration(hintText: 'Subtask Name'),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _dbHelper.insertSubtask({
-                  'parentTaskId': widget.taskId,
-                  'name': _subtaskNameController.text,
-                  'totalWorkTime': 0,
-                  'status': 'doing',
-                });
-                _loadSubtasks();
-                Navigator.pop(context);
-              },
-              child: Text('Add'),
-            ),
-          ],
+        return SubtaskForm(
+          subtask: subtask,
+          onSave: (subtask) {
+            if (subtask['id'] == null) {
+              _addSubtask(subtask['name']);
+            } else {
+              _updateSubtask(subtask);
+            }
+          },
         );
       },
     );
   }
 
-  void _showEditSubtaskDialog(Map<String, dynamic> subtask) {
-    TextEditingController _subtaskNameController =
-        TextEditingController(text: subtask['name']);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero, // Square corners
-          ),
-          title: Text('Edit Subtask'),
-          content: Container(
-            width: double.maxFinite,
-            child: TextField(
-              controller: _subtaskNameController,
-              decoration: InputDecoration(hintText: 'Subtask Name'),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final updatedSubtask = Map<String, dynamic>.from(subtask);
-                updatedSubtask['name'] = _subtaskNameController.text;
-                _dbHelper.updateSubtask(updatedSubtask);
-                _loadSubtasks();
-                Navigator.pop(context);
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+  Future<void> _addSubtask(String name) async {
+    await _dbHelper.insertSubtask({
+      'parentTaskId': widget.taskId,
+      'name': name,
+      'totalWorkTime': 0,
+      'status': 'doing',
+    });
+    _loadSubtasks();
+  }
+
+  Future<void> _updateSubtask(Map<String, dynamic> subtask) async {
+    await _dbHelper.updateSubtask(subtask);
+    _loadSubtasks();
   }
 
   void _confirmDeleteSubtask(int id) {
@@ -543,7 +493,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     SizedBox(height: 20),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       ElevatedButton(
-                        onPressed: _showAddSubtaskDialog,
+                        onPressed: () => _showSubtaskDialog(),
                         child: Text('Add Subtask'),
                       ),
                       SizedBox(width: 10),
@@ -588,7 +538,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               IconButton(
                                 icon: Icon(Icons.edit),
                                 onPressed: () {
-                                  _showEditSubtaskDialog(subtask);
+                                  _showSubtaskDialog(subtask: subtask);
                                 },
                               ),
                               IconButton(
