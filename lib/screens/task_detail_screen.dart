@@ -34,6 +34,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   int _pomodoroDuration = 25; // Default value
   int _breakDuration = 5; // Default value
   DateTime? _pomodoroStartTime; // Start time of the current Pomodoro
+  bool _showTimeLogs = false; // State to manage time logs visibility
 
   @override
   void initState() {
@@ -536,7 +537,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     SizedBox(height: 20),
                     if (_subtasks.isNotEmpty)
                       Text(
-                        'Subtasks:',
+                        'Subtasks',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ..._subtasks.map((subtask) {
@@ -588,7 +589,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     SizedBox(height: 20),
                     if (_notes.isNotEmpty)
                       Text(
-                        'Notes:',
+                        'Notes',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ..._notes.map((note) {
@@ -626,31 +627,54 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                         ),
                       );
                     }).toList(),
-                    SizedBox(height: 20),
-                    if (_timeLogs.isNotEmpty)
-                      Text(
-                        'Time Logs:',
-                        style: Theme.of(context).textTheme.bodyLarge,
+                    SizedBox(height: 15),
+                    if (_timeLogs.length > 0)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('Time Logs'),
+                            IconButton(
+                              icon: Icon(_showTimeLogs
+                                  ? Icons.expand_less
+                                  : Icons.expand_more),
+                              onPressed: () {
+                                setState(() {
+                                  _showTimeLogs = !_showTimeLogs;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ..._timeLogs.map((log) {
-                      final startTime = formatDateTime(log['start_time']);
-                      final endTime = formatDateTime(log['end_time']);
-                      final duration = formatDuration(log['duration']);
-                      return Card(
-                        color: Colors.orange[100],
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.zero, // Remove rounded corners
-                        ),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        elevation: 2,
-                        child: ListTile(
-                          title: Text('Start: $startTime - End: $endTime'),
-                          subtitle: Text('Duration: $duration'),
-                        ),
-                      );
-                    }).toList(),
+                    if (_showTimeLogs)
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: _timeLogs.length,
+                        itemBuilder: (context, index) {
+                          final log = _timeLogs[index];
+                          final startTime = formatDateTime(log['start_time']);
+                          final endTime = formatDateTime(log['end_time']);
+                          final duration = formatDuration(log['duration']);
+                          return Card(
+                            color: Colors.orange[100],
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.zero, // Remove rounded corners
+                            ),
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            elevation: 2,
+                            child: ListTile(
+                              title: Text(
+                                  'Duration: $duration ($startTime - $endTime) '),
+                            ),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
