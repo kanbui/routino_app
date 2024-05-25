@@ -26,7 +26,7 @@ class DatabaseHelper {
     // Determine the environment
     bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
 
-    const int currentDatabaseVersion = 3;
+    const int currentDatabaseVersion = 4;
 
     String folderName = isDevelopment ? 'development' : 'production';
     String path = join(documentsDirectory.path, 'routino_app_db', folderName,
@@ -76,6 +76,16 @@ class DatabaseHelper {
         FOREIGN KEY(task_id) REFERENCES tasks(id)
       )
     ''');
+    await db.execute('''
+      CREATE TABLE time_logs (
+        id INTEGER PRIMARY KEY,
+        task_id INTEGER,
+        start_time TEXT,
+        end_time TEXT,
+        duration INTEGER,
+        FOREIGN KEY (task_id) REFERENCES tasks(id)
+      )
+    ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -96,6 +106,18 @@ class DatabaseHelper {
       await db.execute('''
         ALTER TABLE tasks ADD priority INTEGER;
       ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+      CREATE TABLE time_logs (
+        id INTEGER PRIMARY KEY,
+        task_id INTEGER,
+        start_time TEXT,
+        end_time TEXT,
+        duration INTEGER,
+        FOREIGN KEY (task_id) REFERENCES tasks(id)
+      )
+    ''');
     }
   }
 
@@ -236,5 +258,16 @@ class DatabaseHelper {
     Database db = await database;
     return await db.query('notes',
         where: 'task_id = ?', orderBy: 'createdAt DESC', whereArgs: [taskId]);
+  }
+
+  Future<int> insertTimeLog(Map<String, dynamic> row) async {
+    Database db = await database;
+    return await db.insert('time_logs', row);
+  }
+
+  Future<List<Map<String, dynamic>>> getTimeLogsByTaskId(int taskId) async {
+    Database db = await database;
+    return await db
+        .query('time_logs', where: 'task_id = ?', whereArgs: [taskId]);
   }
 }

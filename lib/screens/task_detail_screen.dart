@@ -24,6 +24,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   Map<String, dynamic> _task = {}; // Default to an empty map
   List<Map<String, dynamic>> _subtasks = [];
   List<Map<String, dynamic>> _notes = [];
+  List<Map<String, dynamic>> _timeLogs = [];
   int _remainingTime = 0;
   bool _isWorking = true;
   Timer? _timer;
@@ -31,6 +32,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _pomodoroDuration = 25; // Default value
   int _breakDuration = 5; // Default value
+  DateTime? _pomodoroStartTime; // Start time of the current Pomodoro
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     _loadTask();
     _loadSubtasks();
     _loadNotes(); // Load notes for the task
+    _loadTimeLogs(); // Load time logs for the task
     _initializeNotifications(); // Initialize notifications
     _setupTray();
   }
@@ -121,6 +124,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     setState(() {
       _notes = notes;
     });
+  }
+
+  Future<void> _loadTimeLogs() async {
+    final timeLogs = await _dbHelper.getTimeLogsByTaskId(widget.taskId);
+    setState(() {
+      _timeLogs = timeLogs;
+    });
+  }
+
+  void _logTime() async {
+    if (_pomodoroStartTime != null) {
+      final endTime = DateTime.now();
+      final duration = endTime.difference(_pomodoroStartTime!).inSeconds;
+      await _dbHelper.insertTimeLog({
+        'task_id': widget.taskId,
+        'start_time': _pomodoroStartTime!.toIso8601String(),
+        'end_time': endTime.toIso8601String(),
+        'duration': duration,
+      });
+      _pomodoroStartTime = null;
+      _loadTimeLogs(); // Reload time logs after adding new log
+    }
   }
 
   String formatDateTime(String? dateTimeString) {
@@ -222,6 +247,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
 
   void _startTimer() {
     _timer?.cancel();
+    _pomodoroStartTime = DateTime.now();
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         if (_remainingTime > 0) {
@@ -245,6 +271,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   void _stopTimer() {
+    _logTime(); // Log the current Pomodoro time when timer is stopped
     _timer?.cancel();
   }
 
@@ -412,6 +439,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
 
   @override
   void dispose() {
+    _logTime(); // Log the current Pomodoro time when exiting the screen
     _timer?.cancel();
     _audioPlayer.dispose();
     _resetPomodoro(); // Reset Pomodoro time when exiting the screen
@@ -592,6 +620,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               ),
                             ],
                           ),
+                        ),
+                      );
+                    }).toList(),
+                    SizedBox(height: 20),
+                    if (_timeLogs.isNotEmpty)
+                      Text(
+                        'Time Logs:',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ..._timeLogs.map((log) {
+                      final startTime = formatDateTime(log['start_time']);
+                      final endTime = formatDateTime(log['end_time']);
+                      final duration = formatDuration(log['duration']);
+                      return Card(
+                        color: Colors.orange[100],
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.zero, // Remove rounded corners
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text('Start: $startTime - End: $endTime'),
+                          subtitle: Text('Duration: $duration'),
                         ),
                       );
                     }).toList(),
