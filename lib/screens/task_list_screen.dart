@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../database/database_helper.dart';
 import 'task_detail_screen.dart';
+import 'task_form.dart';
 
 class TaskListScreen extends StatefulWidget {
   @override
@@ -131,168 +132,18 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   void _showTaskDialog({Map<String, dynamic>? task}) {
-    final TextEditingController _taskNameController =
-        TextEditingController(text: task?['name']);
-    final TextEditingController _taskEstimateHoursController =
-        TextEditingController(
-            text: task != null ? (task['estimateTime'] ~/ 60).toString() : '');
-    final TextEditingController _taskEstimateMinutesController =
-        TextEditingController(
-            text: task != null ? (task['estimateTime'] % 60).toString() : '');
-    final _formKey = GlobalKey<FormState>();
-    DateTime? _dueTime =
-        task != null ? DateTime.tryParse(task['dueTime']) : null;
-    int _priority =
-        task != null ? task['priority'] : 3; // default normal priority
-
-    Future<void> _selectDueTime(
-        BuildContext context, void Function(void Function()) setState) async {
-      final DateTime? pickedDate = await showDatePicker(
-        context: context,
-        initialDate: _dueTime ?? DateTime.now(),
-        firstDate: DateTime(2000),
-        lastDate: DateTime(2101),
-      );
-      if (pickedDate != null) {
-        final TimeOfDay? pickedTime = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(_dueTime ?? DateTime.now()),
-        );
-        if (pickedTime != null) {
-          setState(() {
-            _dueTime = DateTime(
-              pickedDate.year,
-              pickedDate.month,
-              pickedDate.day,
-              pickedTime.hour,
-              pickedTime.minute,
-            );
-          });
-        }
-      }
-    }
-
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero, // Square corners
-              ),
-              title: Text(task == null ? 'Add Task' : 'Edit Task'),
-              content: Container(
-                width: double.maxFinite,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: _taskNameController,
-                        decoration: InputDecoration(hintText: 'Task Name'),
-                        validator: (value) =>
-                            value!.isEmpty ? 'Please enter task name' : null,
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _taskEstimateHoursController,
-                              decoration: InputDecoration(labelText: 'Hours'),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _taskEstimateMinutesController,
-                              decoration: InputDecoration(labelText: 'Minutes'),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              value: _priority,
-                              items: [
-                                DropdownMenuItem(
-                                    value: 1, child: Text('urgent')),
-                                DropdownMenuItem(value: 2, child: Text('high')),
-                                DropdownMenuItem(
-                                    value: 3, child: Text('normal')),
-                                DropdownMenuItem(value: 4, child: Text('low')),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _priority = value ?? 3;
-                                });
-                              },
-                              decoration:
-                                  InputDecoration(labelText: 'Độ ưu tiên'),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _dueTime == null
-                                  ? 'Select Due Time'
-                                  : DateFormat('d MMM yyyy HH:mm')
-                                      .format(_dueTime!),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.calendar_today),
-                            onPressed: () {
-                              _selectDueTime(context, setState);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final int hours =
-                        int.tryParse(_taskEstimateHoursController.text) ?? 0;
-                    final int minutes =
-                        int.tryParse(_taskEstimateMinutesController.text) ?? 0;
-                    final estimateTime = (hours * 60) + minutes;
-                    final dueTime = _dueTime ?? DateTime.now();
-
-                    if (_formKey.currentState!.validate()) {
-                      if (task == null) {
-                        _addTask(_taskNameController.text, estimateTime,
-                            dueTime, _priority);
-                      } else {
-                        final updatedTask = Map<String, dynamic>.from(task);
-                        updatedTask['name'] = _taskNameController.text;
-                        updatedTask['estimateTime'] = estimateTime;
-                        updatedTask['dueTime'] = _dueTime?.toIso8601String();
-                        updatedTask['priority'] = _priority;
-                        _updateTask(updatedTask);
-                      }
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(task == null ? 'Add' : 'Save'),
-                ),
-              ],
-            );
+        return TaskDialog(
+          task: task,
+          onSave: (task) {
+            if (task['id'] == null) {
+              _addTask(task['name'], task['estimateTime'],
+                  DateTime.parse(task['dueTime']), task['priority']);
+            } else {
+              _updateTask(task);
+            }
           },
         );
       },
