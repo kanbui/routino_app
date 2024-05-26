@@ -35,6 +35,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   int _breakDuration = 5; // Default value
   DateTime? _pomodoroStartTime; // Start time of the current Pomodoro
   bool _showTimeLogs = false; // State to manage time logs visibility
+  Map<String, dynamic>? _currentSubtask; // Selected subtask for Pomodoro
 
   @override
   void initState() {
@@ -144,6 +145,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
         'end_time': endTime.toIso8601String(),
         'duration': _elapsedSeconds,
       });
+
+      if (_currentSubtask != null) {
+        final updatedWorkTime =
+            _currentSubtask!['totalWorkTime'] + _elapsedSeconds;
+        await _dbHelper.updateSubtask({
+          'id': _currentSubtask!['id'],
+          'totalWorkTime': updatedWorkTime,
+        });
+        _loadSubtasks(); // Refresh the subtasks
+      }
+
       _pomodoroStartTime = null;
       _elapsedSeconds = 0;
       _loadTimeLogs(); // Reload time logs after adding new log
@@ -420,7 +432,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   void _startSubtaskTimer(Map<String, dynamic> subtask) {
-    // Implement timer logic for subtasks if needed
+    setState(() {
+      if (_currentSubtask == subtask) {
+        _currentSubtask = null;
+      } else {
+        _currentSubtask = subtask;
+      }
+    });
   }
 
   @override
@@ -502,6 +520,26 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                       ),
                     ),
                     SizedBox(height: 20),
+                    if (_currentSubtask != null)
+                      Column(
+                        children: [
+                          Text(
+                            'Current Subtask: ${_currentSubtask!['name']}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close),
+                            onPressed: () {
+                              setState(() {
+                                _currentSubtask = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -544,6 +582,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                           formatDuration(subtask['totalWorkTime']);
                       final estimateTime =
                           formatDuration(subtask['estimateTime']);
+                      final isSelected = _currentSubtask == subtask;
                       return Card(
                         color: subtask['status'] == 'doing'
                             ? Colors.lightBlue[200]
@@ -578,6 +617,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                                 icon: Icon(Icons.delete),
                                 onPressed: () {
                                   _confirmDeleteSubtask(subtask['id']);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(isSelected
+                                    ? Icons.close
+                                    : Icons.play_arrow),
+                                onPressed: () {
+                                  _startSubtaskTimer(subtask);
                                 },
                               ),
                             ],
