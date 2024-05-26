@@ -540,8 +540,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             icon: Icon(Icons.close),
                             onPressed: () {
                               setState(() {
-                                _currentSubtask = null;
                                 _stopTimer();
+                                _currentSubtask = null;
                               });
                             },
                           ),
