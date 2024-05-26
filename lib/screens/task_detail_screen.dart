@@ -435,6 +435,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     setState(() {
       if (_currentSubtask == subtask) {
         _currentSubtask = null;
+        _stopTimer(); // Stop the Pomodoro timer when closing the subtask
       } else {
         _currentSubtask = subtask;
       }
@@ -521,25 +522,35 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     ),
                     SizedBox(height: 20),
                     if (_currentSubtask != null)
-                      Column(
-                        children: [
-                          Text(
-                            'Current Subtask: ${_currentSubtask!['name']}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Card(
+                        color: _currentSubtask!['status'] == 'doing'
+                            ? Colors.lightBlue[200]
+                            : Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        elevation: 2,
+                        child: ListTile(
+                          title: Text(
+                            _currentSubtask!['name'],
                           ),
-                          IconButton(
+                          trailing: IconButton(
                             icon: Icon(Icons.close),
                             onPressed: () {
                               setState(() {
                                 _currentSubtask = null;
+                                _stopTimer();
                               });
                             },
                           ),
-                        ],
+                          subtitle: Text(
+                            'Est: ${formatDuration(_currentSubtask!['estimateTime'])} | Worked: ${formatDuration(_currentSubtask!['totalWorkTime'])}',
+                          ),
+                        ),
                       ),
+                    SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
