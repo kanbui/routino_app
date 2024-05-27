@@ -545,6 +545,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               fontSize: 36,
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 10.0,
+                                  color: Colors.black,
+                                  offset: Offset(2.0, 2.0),
+                                ),
+                              ],
                             ),
                           ),
                         ),
