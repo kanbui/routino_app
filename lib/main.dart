@@ -9,7 +9,7 @@ void main() async {
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = WindowOptions(
-    size: Size(800, 600),
+    size: Size(700, 1024),
     center: true,
     title: 'Routino App',
   );

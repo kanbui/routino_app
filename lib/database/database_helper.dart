@@ -26,7 +26,7 @@ class DatabaseHelper {
     // Determine the environment
     bool isDevelopment = const bool.fromEnvironment('dart.vm.product') == false;
 
-    const int currentDatabaseVersion = 5;
+    const int currentDatabaseVersion = 6;
 
     String folderName = isDevelopment ? 'development' : 'production';
     String path = join(documentsDirectory.path, 'routino_app_db', folderName,
@@ -81,6 +81,7 @@ class DatabaseHelper {
       CREATE TABLE time_logs (
         id INTEGER PRIMARY KEY,
         task_id INTEGER,
+        subtask_id INTEGER,
         start_time TEXT,
         end_time TEXT,
         duration INTEGER,
@@ -123,6 +124,12 @@ class DatabaseHelper {
     if (oldVersion < 5) {
       await db.execute('''
       ALTER TABLE subtasks ADD estimateTime INTEGER;
+      ''');
+    }
+
+    if (oldVersion < 6) {
+      await db.execute('''
+      ALTER TABLE time_logs ADD subtask_id INTEGER;
       ''');
     }
   }
@@ -229,6 +236,17 @@ class DatabaseHelper {
   Future<int> insertSubtask(Map<String, dynamic> subtask) async {
     Database db = await database;
     return await db.insert('subtasks', subtask);
+  }
+
+  Future<Map<String, dynamic>> getSubtaskById(int subTaskId) async {
+    Database db = await database;
+    List<Map<String, dynamic>> result = await db.query(
+      'subtasks',
+      where: 'id = ?',
+      whereArgs: [subTaskId],
+    );
+
+    return result.first;
   }
 
   Future<int> updateSubtask(Map<String, dynamic> subtask) async {

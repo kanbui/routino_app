@@ -136,25 +136,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     });
   }
 
-  void _logTime() async {
+  Future<void> _logTime() async {
     if (_pomodoroStartTime != null && _elapsedSeconds > 0) {
       final endTime = DateTime.now();
-      await _dbHelper.insertTimeLog({
+      var logTime = {
         'task_id': widget.taskId,
         'start_time': _pomodoroStartTime!.toIso8601String(),
         'end_time': endTime.toIso8601String(),
         'duration': _elapsedSeconds,
-      });
+      };
+      if (_currentSubtask != null) {
+        logTime['subtask_id'] = _currentSubtask!['id'];
+      }
+      await _dbHelper.insertTimeLog(logTime);
 
       if (_currentSubtask != null) {
         final updatedWorkTime =
             _currentSubtask!['totalWorkTime'] + _elapsedSeconds;
-        await _dbHelper.updateSubtask({
+        final updatedSubTask = await _dbHelper.updateSubtask({
           'id': _currentSubtask!['id'],
           'totalWorkTime': updatedWorkTime,
         });
-        _loadSubtasks(); // Refresh the subtasks
+        _currentSubtask =
+            await _dbHelper.getSubtaskById(_currentSubtask!['id']);
       }
+      await _loadSubtasks(); // Refresh the subtasks
 
       _pomodoroStartTime = null;
       _elapsedSeconds = 0;
@@ -286,8 +292,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     });
   }
 
-  void _stopTimer() {
-    _logTime(); // Log the current Pomodoro time when timer is stopped
+  Future<void> _stopTimer() async {
+    await _logTime(); // Log the current Pomodoro time when timer is stopped
     _timer?.cancel();
   }
 
@@ -431,15 +437,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     _loadSubtasks();
   }
 
-  void _startSubtaskTimer(Map<String, dynamic> subtask) {
-    setState(() {
-      if (_currentSubtask == subtask) {
+  Future<void> _startSubtaskTimer(Map<String, dynamic>? subtask) async {
+    if (_currentSubtask == subtask) {
+      await _stopTimer(); // Stop the Pomodoro timer when closing the subtask
+      setState(() {
         _currentSubtask = null;
-        _stopTimer(); // Stop the Pomodoro timer when closing the subtask
-      } else {
+      });
+    } else {
+      setState(() {
         _currentSubtask = subtask;
-      }
-    });
+      });
+    }
   }
 
   @override
@@ -540,8 +548,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             icon: Icon(Icons.close),
                             onPressed: () {
                               setState(() {
-                                _stopTimer();
-                                _currentSubtask = null;
+                                _startSubtaskTimer(_currentSubtask);
                               });
                             },
                           ),
