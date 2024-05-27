@@ -505,6 +505,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
         ),
       ),
       body: Container(
+        constraints: BoxConstraints.expand(),
         decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/bg.jpeg'),
