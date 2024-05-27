@@ -137,7 +137,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
   }
 
   Future<void> _logTime() async {
-    if (_pomodoroStartTime != null && _elapsedSeconds > 0) {
+    if (_isWorking && _pomodoroStartTime != null && _elapsedSeconds > 0) {
       final endTime = DateTime.now();
       var logTime = {
         'task_id': widget.taskId,
@@ -495,283 +495,306 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
     return Scaffold(
       appBar: AppBar(
         title: Text(_task['name']),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/bg.jpeg'),
+              repeat: ImageRepeat.repeat,
+            ),
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Center(
-                child: Column(
-                  children: [
-                    Text(
-                      'Worked Time: $totalWorkTimeFormatted',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    SizedBox(height: 20),
-                    Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        color: _isWorking ? Colors.red : Colors.lightBlueAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          formattedRemainingTime,
-                          style: TextStyle(
-                            fontSize: 48,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    if (_currentSubtask != null)
-                      Card(
-                        color: _currentSubtask!['status'] == 'doing'
-                            ? Colors.lightBlue[200]
-                            : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        elevation: 2,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.only(
-                              left: 10, top: 0, right: 3, bottom: 0),
-                          title: Text(
-                            _currentSubtask!['name'],
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _startSubtaskTimer(_currentSubtask);
-                              });
-                            },
-                          ),
-                          subtitle: Text(
-                            'Est: ${formatDuration(_currentSubtask!['estimateTime'])} | Worked: ${formatDuration(_currentSubtask!['totalWorkTime'])}',
-                          ),
-                        ),
-                      ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _startTimer,
-                          child: Text('Start'),
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _stopTimer,
-                          child: Text('Stop'),
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _resetTimer,
-                          child: Text('Reset'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      ElevatedButton(
-                        onPressed: () => _showSubtaskDialog(),
-                        child: Text('Add Subtask'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _showAddNoteDialog,
-                        child: Text('Add Note'),
-                      ),
-                    ]),
-                    SizedBox(height: 20),
-                    if (_subtasks.isNotEmpty)
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg.jpeg'),
+            repeat: ImageRepeat.repeat,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Center(
+                  child: Column(
+                    children: [
                       Text(
-                        'Subtasks',
+                        'Worked Time: $totalWorkTimeFormatted',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                    ..._subtasks.map((subtask) {
-                      final subtaskTotalWorkTimeFormatted =
-                          formatDuration(subtask['totalWorkTime']);
-                      final estimateTime =
-                          formatDuration(subtask['estimateTime']);
-                      final isSelected = _currentSubtask == subtask;
-                      return Card(
-                        color: subtask['status'] == 'doing'
-                            ? Colors.lightBlue[200]
-                            : Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.zero, // Remove rounded corners
+                      SizedBox(height: 20),
+                      Container(
+                        width: 400,
+                        height: 400,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                                'assets/circle.jpeg'), // Thay đường dẫn tới hình ảnh của bạn
+                            fit: BoxFit.cover,
+                          ),
+                          shape: BoxShape.circle, // Giữ hình dạng tròn
+                          // color: _isWorking ? Colors.red : Colors.lightBlueAccent,
                         ),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        elevation: 2,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.only(
-                              left: 10, top: 0, right: 3, bottom: 0),
-                          title: Text(
-                            subtask['name'],
+                        child: Center(
+                          child: Text(
+                            formattedRemainingTime,
                             style: TextStyle(
-                              fontSize: 14, // Large font size
-                              fontWeight: FontWeight.bold, // Bold font weight
-                            ),
-                          ),
-                          leading: Checkbox(
-                            value: subtask['status'] == 'completed',
-                            onChanged: (value) {
-                              _toggleSubtaskStatus(subtask);
-                            },
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () {
-                                  _showSubtaskDialog(subtask: subtask);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () {
-                                  _confirmDeleteSubtask(subtask['id']);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(isSelected
-                                    ? Icons.close
-                                    : Icons.play_arrow),
-                                onPressed: () {
-                                  _startSubtaskTimer(subtask);
-                                },
-                              ),
-                            ],
-                          ),
-                          subtitle: Text(
-                            'Est: $estimateTime | Worked: $subtaskTotalWorkTimeFormatted',
-                            style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 36,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                    SizedBox(height: 20),
-                    if (_notes.isNotEmpty)
-                      Text(
-                        'Notes',
-                        style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                    ..._notes.map((note) {
-                      final createdTime = formatDateTime(note['createdAt']);
-                      return Card(
-                        color: Colors.teal[100],
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.zero, // Remove rounded corners
-                        ),
-                        margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                        elevation: 2,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.only(
-                              left: 10, top: 0, right: 3, bottom: 0),
-                          title: Text(
-                            '${note['icon']} ${note['content']}',
-                            style: TextStyle(
-                              fontSize: 14, // Large font size
-                              fontWeight: FontWeight.bold, // Bold font weight
+                      SizedBox(height: 20),
+                      if (_currentSubtask != null)
+                        Card(
+                          color: _currentSubtask!['status'] == 'doing'
+                              ? Colors.lightBlue[200]
+                              : Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                          margin:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          elevation: 2,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.only(
+                                left: 10, top: 0, right: 3, bottom: 0),
+                            title: Text(
+                              _currentSubtask!['name'],
                             ),
-                          ),
-                          subtitle: Text(
-                            '${createdTime} | ${note['point']} point',
-                            style: TextStyle(
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () {
-                                  _showEditNoteDialog(note);
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () {
-                                  _confirmDeleteNote(note['id']);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    SizedBox(height: 15),
-                    if (_timeLogs.length > 0)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4.5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Time Logs'),
-                            IconButton(
-                              icon: Icon(_showTimeLogs
-                                  ? Icons.expand_less
-                                  : Icons.expand_more),
+                            trailing: IconButton(
+                              icon: Icon(Icons.close),
                               onPressed: () {
                                 setState(() {
-                                  _showTimeLogs = !_showTimeLogs;
+                                  _startSubtaskTimer(_currentSubtask);
                                 });
                               },
                             ),
-                          ],
+                            subtitle: Text(
+                              'Est: ${formatDuration(_currentSubtask!['estimateTime'])} | Worked: ${formatDuration(_currentSubtask!['totalWorkTime'])}',
+                            ),
+                          ),
                         ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _startTimer,
+                            child: Text('Start'),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _stopTimer,
+                            child: Text('Stop'),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _resetTimer,
+                            child: Text('Reset'),
+                          ),
+                        ],
                       ),
-                    if (_showTimeLogs)
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: _timeLogs.length,
-                        itemBuilder: (context, index) {
-                          final log = _timeLogs[index];
-                          final startTime = formatDateTime(log['start_time']);
-                          final endTime = formatDateTime(log['end_time']);
-                          final duration = formatDuration(log['duration']);
-                          return Card(
-                            color: Colors.orange[100],
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.zero, // Remove rounded corners
+                      SizedBox(height: 20),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _showSubtaskDialog(),
+                              child: Text('Add Subtask'),
                             ),
-                            margin: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            elevation: 2,
-                            child: ListTile(
-                              contentPadding: EdgeInsets.only(
-                                  left: 10, top: 0, right: 3, bottom: 0),
-                              title: Text(
-                                  'Duration: $duration ($startTime - $endTime) '),
+                            SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: _showAddNoteDialog,
+                              child: Text('Add Note'),
                             ),
-                          );
-                        },
-                      ),
-                  ],
+                          ]),
+                      SizedBox(height: 20),
+                      if (_subtasks.isNotEmpty)
+                        Text(
+                          'Subtasks',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ..._subtasks.map((subtask) {
+                        final subtaskTotalWorkTimeFormatted =
+                            formatDuration(subtask['totalWorkTime']);
+                        final estimateTime =
+                            formatDuration(subtask['estimateTime']);
+                        final isSelected = _currentSubtask == subtask;
+                        return Card(
+                          color: subtask['status'] == 'doing'
+                              ? Colors.lightBlue[200]
+                              : Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.zero, // Remove rounded corners
+                          ),
+                          margin:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          elevation: 2,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.only(
+                                left: 10, top: 0, right: 3, bottom: 0),
+                            title: Text(
+                              subtask['name'],
+                              style: TextStyle(
+                                fontSize: 14, // Large font size
+                                fontWeight: FontWeight.bold, // Bold font weight
+                              ),
+                            ),
+                            leading: Checkbox(
+                              value: subtask['status'] == 'completed',
+                              onChanged: (value) {
+                                _toggleSubtaskStatus(subtask);
+                              },
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () {
+                                    _showSubtaskDialog(subtask: subtask);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    _confirmDeleteSubtask(subtask['id']);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(isSelected
+                                      ? Icons.close
+                                      : Icons.play_arrow),
+                                  onPressed: () {
+                                    _startSubtaskTimer(subtask);
+                                  },
+                                ),
+                              ],
+                            ),
+                            subtitle: Text(
+                              'Est: $estimateTime | Worked: $subtaskTotalWorkTimeFormatted',
+                              style: TextStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      SizedBox(height: 20),
+                      if (_notes.isNotEmpty)
+                        Text(
+                          'Notes',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ..._notes.map((note) {
+                        final createdTime = formatDateTime(note['createdAt']);
+                        return Card(
+                          color: Colors.teal[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.zero, // Remove rounded corners
+                          ),
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4.5),
+                          elevation: 2,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.only(
+                                left: 10, top: 0, right: 3, bottom: 0),
+                            title: Text(
+                              '${note['icon']} ${note['content']}',
+                              style: TextStyle(
+                                fontSize: 14, // Large font size
+                                fontWeight: FontWeight.bold, // Bold font weight
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${createdTime} | ${note['point']} point',
+                              style: TextStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () {
+                                    _showEditNoteDialog(note);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    _confirmDeleteNote(note['id']);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      SizedBox(height: 15),
+                      if (_timeLogs.length > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4.5),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Time Logs'),
+                              IconButton(
+                                icon: Icon(_showTimeLogs
+                                    ? Icons.expand_less
+                                    : Icons.expand_more),
+                                onPressed: () {
+                                  setState(() {
+                                    _showTimeLogs = !_showTimeLogs;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_showTimeLogs)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: _timeLogs.length,
+                          itemBuilder: (context, index) {
+                            final log = _timeLogs[index];
+                            final startTime = formatDateTime(log['start_time']);
+                            final endTime = formatDateTime(log['end_time']);
+                            final duration = formatDuration(log['duration']);
+                            return Card(
+                              color: Colors.orange[100],
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.zero, // Remove rounded corners
+                              ),
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              elevation: 2,
+                              child: ListTile(
+                                contentPadding: EdgeInsets.only(
+                                    left: 10, top: 0, right: 3, bottom: 0),
+                                title: Text(
+                                    'Duration: $duration ($startTime - $endTime) '),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: 20), // Add extra spacing to avoid overflow
-            ],
+                SizedBox(height: 20), // Add extra spacing to avoid overflow
+              ],
+            ),
           ),
         ),
       ),
