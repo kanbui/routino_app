@@ -230,7 +230,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     ),
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                     dropdownColor: Colors.white,
                     icon: Icon(Icons.arrow_drop_down),
@@ -260,7 +260,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     ),
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                     dropdownColor: Colors.white,
                     icon: Icon(Icons.arrow_drop_down),
@@ -288,15 +288,28 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.zero,
                       ),
-                      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      margin:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                       elevation: 2,
                       child: ListTile(
-                        title: Text(task['name']),
+                        contentPadding: EdgeInsets.only(
+                            left: 10, top: 0, right: 3, bottom: 0),
+                        title: Text(
+                          task['name'],
+                          style: TextStyle(
+                            fontSize: 14, // Large font size
+                            fontWeight: FontWeight.bold, // Bold font weight
+                          ),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                                '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
+                              '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted',
+                              style: TextStyle(
+                                fontSize: 12,
+                              ),
+                            )
                           ],
                         ),
                         leading: Checkbox(
@@ -365,15 +378,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           borderRadius: BorderRadius.zero,
                         ),
                         margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                         elevation: 2,
                         child: ListTile(
-                          title: Text(task['name']),
+                          title: Text(
+                            task['name'],
+                            style: TextStyle(
+                              fontSize: 14, // Large font size
+                              fontWeight: FontWeight.bold, // Bold font weight
+                            ),
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                  '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted')
+                                '$dueTimeFormatted | Est: $estimateTime | Worked: $totalWorkTimeFormatted',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                ),
+                              )
                             ],
                           ),
                           leading: Checkbox(

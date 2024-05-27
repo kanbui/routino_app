@@ -541,6 +541,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         elevation: 2,
                         child: ListTile(
+                          contentPadding: EdgeInsets.only(
+                              left: 10, top: 0, right: 3, bottom: 0),
                           title: Text(
                             _currentSubtask!['name'],
                           ),
@@ -613,8 +615,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         elevation: 2,
                         child: ListTile(
+                          contentPadding: EdgeInsets.only(
+                              left: 10, top: 0, right: 3, bottom: 0),
                           title: Text(
                             subtask['name'],
+                            style: TextStyle(
+                              fontSize: 14, // Large font size
+                              fontWeight: FontWeight.bold, // Bold font weight
+                            ),
                           ),
                           leading: Checkbox(
                             value: subtask['status'] == 'completed',
@@ -648,7 +656,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                             ],
                           ),
                           subtitle: Text(
-                              'Est: $estimateTime | Worked: $subtaskTotalWorkTimeFormatted'),
+                            'Est: $estimateTime | Worked: $subtaskTotalWorkTimeFormatted',
+                            style: TextStyle(
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -667,12 +679,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                               BorderRadius.zero, // Remove rounded corners
                         ),
                         margin:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                         elevation: 2,
                         child: ListTile(
-                          title: Text('${note['icon']} ${note['content']}'),
-                          subtitle:
-                              Text('${createdTime} | ${note['point']} point'),
+                          contentPadding: EdgeInsets.only(
+                              left: 10, top: 0, right: 3, bottom: 0),
+                          title: Text(
+                            '${note['icon']} ${note['content']}',
+                            style: TextStyle(
+                              fontSize: 14, // Large font size
+                              fontWeight: FontWeight.bold, // Bold font weight
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${createdTime} | ${note['point']} point',
+                            style: TextStyle(
+                              fontSize: 12,
+                            ),
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -697,7 +721,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                     if (_timeLogs.length > 0)
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                            horizontal: 10, vertical: 4.5),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -735,6 +759,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                                 horizontal: 10, vertical: 5),
                             elevation: 2,
                             child: ListTile(
+                              contentPadding: EdgeInsets.only(
+                                  left: 10, top: 0, right: 3, bottom: 0),
                               title: Text(
                                   'Duration: $duration ($startTime - $endTime) '),
                             ),
