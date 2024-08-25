@@ -2,15 +2,15 @@
 A application for tasks management with pomodoro method
 
 ## Download
-https://github.com/kanbui/routino_app/blob/main/releases/macos/Routino-0.1.0.zip
+https://github.com/kanbui/routino_app/raw/main/releases/macos/Routino-0.1.0.zip
 
 ## Screenshots
 
-<img src=".github/docs/images/screenshot-1.jpg" width="300" height="400">
+<img src=".github/docs/images/screenshot-1.jpg" width="500">
 
-<img src=".github/docs/images/screenshot-2.jpg" width="300">
+<img src=".github/docs/images/screenshot-2.jpg" width="500">
 
-<img src=".github/docs/images/screenshot-3.jpg" width="300">
+<img src=".github/docs/images/screenshot-3.jpg" width="500">
 
 
 ## Techstack
