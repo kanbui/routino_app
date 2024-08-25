@@ -1,13 +1,17 @@
 # Routino App
 A application for tasks management with pomodoro method
 
+## Download
+https://github.com/kanbui/routino_app/blob/main/releases/macos/Routino-0.1.0.zip
+
 ## Screenshots
 
-![alt](.github/docs/images/screenshot-1.jpg)
+<img src=".github/docs/images/screenshot-1.jpg" width="300" height="400">
 
-![alt](.github/docs/images/screenshot-2.jpg)
+<img src=".github/docs/images/screenshot-2.jpg" width="300">
 
-![alt](.github/docs/images/screenshot-3.jpg)
+<img src=".github/docs/images/screenshot-3.jpg" width="300">
+
 
 ## Techstack
 - Flutter: 3.25.0-1.0.pre.127
