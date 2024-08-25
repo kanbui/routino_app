@@ -755,7 +755,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> with TrayListener {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Time Logs'),
+                              Text(
+                                'Time Logs',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                               IconButton(
                                 icon: Icon(_showTimeLogs
                                     ? Icons.expand_less

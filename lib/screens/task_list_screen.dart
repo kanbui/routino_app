@@ -209,14 +209,25 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     value: _selectedTimeFilter,
                     items: [
                       DropdownMenuItem(
-                          value: 'all', child: Text('Tất cả thời gian')),
-                      DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
+                        value: 'all',
+                        child: Text('All Time'),
+                      ),
                       DropdownMenuItem(
-                          value: 'tomorrow', child: Text('Ngày Mai')),
+                        value: 'today',
+                        child: Text('Today'),
+                      ),
                       DropdownMenuItem(
-                          value: 'this_week', child: Text('Tuần Này')),
+                        value: 'tomorrow',
+                        child: Text('Tomorrow'),
+                      ),
                       DropdownMenuItem(
-                          value: 'this_month', child: Text('Tháng Này')),
+                        value: 'this_week',
+                        child: Text('This Week'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'this_month',
+                        child: Text('This Month'),
+                      ),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -242,7 +253,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     value: _selectedPriorityFilter,
                     items: [
                       DropdownMenuItem(
-                          value: 'all', child: Text('Tất cả cấp độ')),
+                        value: 'all',
+                        child: Text('All Priorities'),
+                      ),
                       DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
                       DropdownMenuItem(value: 'high', child: Text('High')),
                       DropdownMenuItem(value: 'normal', child: Text('Normal')),

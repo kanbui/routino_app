@@ -142,7 +142,7 @@ class _TaskDialogState extends State<TaskDialog> {
                           _priority = value ?? 3;
                         });
                       },
-                      decoration: InputDecoration(labelText: 'Độ ưu tiên'),
+                      decoration: InputDecoration(labelText: 'Priority'),
                     ),
                   ),
                   SizedBox(width: 10),
